@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  firstname    String
+  lastname     String
+  username     String   @unique
+  email        String   @unique
+  password     String
+  tokenVersion Int
+  images       Images[]
+}
+
+model Workout {
+  id               String            @id @default(uuid())
+  title            String
+  exerciseWorkouts ExerciseWorkout[]
+  images           Images[]
+}
+
+model ExerciseWorkout {
+  workoutId  String  @db.Char(36)
+  workout    Workout @relation(fields: [workoutId], references: [id])
+  exerciseId String  @db.Char(36)
+
+  @@id([workoutId, exerciseId])
+}
+
+model Images {
+  id        String  @id @default(uuid())
+  filename  String
+  workoutId String  @db.Char(36)
+  workout   Workout @relation(fields: [workoutId], references: [id])
+  userId    String  @db.Char(36)
+  user      User    @relation(fields: [userId], references: [id])
+}
