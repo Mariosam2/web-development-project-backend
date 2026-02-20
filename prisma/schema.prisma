@@ -14,15 +14,16 @@ datasource db {
 }
 
 model User {
-  id           String @id @default(uuid())
-  firstname    String
-  lastname     String
-  username     String @unique
-  email        String @unique
-  password     String
-  tokenVersion Int
-  imageId      String @unique
-  image        Image  @relation(fields: [imageId], references: [id])
+  id           String  @id @default(uuid())
+  googleId     String? @unique
+  firstname    String?
+  lastname     String?
+  username     String  @unique
+  email        String  @unique
+  password     String?
+  tokenVersion Int     @default(1)
+  imageId      String? @unique
+  image        Image?  @relation(fields: [imageId], references: [id])
 }
 
 model Exercise {
