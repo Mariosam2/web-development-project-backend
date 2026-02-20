@@ -1,9 +1,9 @@
-import { exercise, exercises } from "@src/controllers/exerciseController";
+import { singleExercise, exercisesFromExerciseDb } from "@src/controllers/exerciseControllers";
 import { Router } from "express";
 
 const exerciseRouter = Router();
 
-exerciseRouter.get("/", exercises);
-exerciseRouter.get("/:exerciseId", exercise);
+exerciseRouter.get("/", exercisesFromExerciseDb);
+exerciseRouter.get("/:exerciseId", singleExercise);
 
 export default exerciseRouter;
