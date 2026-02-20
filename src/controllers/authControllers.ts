@@ -4,15 +4,23 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "@src/../lib/prisma";
 import bcrypt from "bcrypt";
-import { generateTokensAndCookie, getEnvOrThrow } from "@src/shared/helpers";
+import { generateTokensAndCookie, getEnvOrThrow, messageFromPrismaError } from "@src/shared/helpers";
 import { RegisterSchema } from "@src/shared/schemas/RegisterSchema";
 import { ITokenPayload } from "@src/shared/interfaces/ITokenPayload";
+import { PrismaClientValidationError } from "@prisma/client/runtime/client";
+import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaNamespace";
 
 export const login = async (req: Request, res: Response) => {
   try {
     const result = LoginSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ success: false, message: result.error.message });
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
     }
 
     const { username, email, password } = result.data;
@@ -31,7 +39,25 @@ export const login = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "user");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -40,16 +66,42 @@ export const register = async (req: Request, res: Response) => {
     const result = RegisterSchema.safeParse(req.body);
 
     if (!result.success) {
-      return res.status(400).json({ success: false, message: result.error.message });
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
     }
 
-    const user = result.data;
-    const newUser = await prisma.user.create({ data: user });
+    const { confirmPassword, ...user } = result.data;
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const newUser = await prisma.user.create({ data: { ...user, password: hashedPassword } });
     const accessToken = generateTokensAndCookie(newUser, res);
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    console.log(error);
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "user");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -74,14 +126,38 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "user");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
 export const googleAuthCallbak = (req: Request, res: Response) => {
   const result = UserSchema.safeParse(req.user);
   if (!result.success) {
-    return res.status(400).json({ success: false, message: result.error.message });
+    return res.status(400).json({
+      success: false,
+      validationErrors: result.error.issues.map((e) => ({
+        field: e.path.join("."),
+        message: e.message,
+      })),
+    });
   }
 
   const user = result.data;

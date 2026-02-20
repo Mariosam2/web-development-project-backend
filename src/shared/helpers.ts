@@ -46,3 +46,22 @@ export const generateTokensAndCookie = (user: User, res: Response) => {
   });
   return accessToken;
 };
+
+export const messageFromPrismaError = (errorCode: string, model: string) => {
+  switch (errorCode) {
+    case "P2002": // unique constraint
+      return `${model} already exists`;
+
+    case "P2025": // record not found (update/delete)
+      return `${model} not found`;
+
+    case "P2003": // foreign key constraint
+      return "related record not found";
+
+    case "P2014": // relation violation
+      return "relation constraint violated";
+
+    default:
+      return "unknown error";
+  }
+};

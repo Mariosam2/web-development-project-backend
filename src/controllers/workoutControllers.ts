@@ -1,14 +1,21 @@
+import { PrismaClientValidationError } from "@prisma/client/runtime/client";
 import { prisma } from "@src/../lib/prisma";
+import { messageFromPrismaError } from "@src/shared/helpers";
+import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
 import { Request, Response } from "express";
 import { Exercise } from "generated/prisma/client";
+import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaNamespace";
 
 export const workouts = async (req: Request, res: Response) => {
   try {
     const workouts = await prisma.workout.findMany();
     return res.status(200).json({ success: true, data: workouts });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -19,7 +26,25 @@ export const exercises = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data: exercises });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "workout");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -27,7 +52,13 @@ export const addWorkout = async (req: Request, res: Response) => {
   try {
     const result = WorkoutSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ success: false, message: result.error.message });
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
     }
 
     const workout = result.data;
@@ -35,7 +66,25 @@ export const addWorkout = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "workout created successfully!" });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "workout");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -44,7 +93,14 @@ export const updateWorkout = async (req: Request, res: Response) => {
     const { workoutId } = req.params;
     const result = WorkoutSchema.safeParse(req.body);
     if (!result.success || !workoutId) {
-      return res.status(400).json({ success: false, message: result.error?.message ?? "workoutId is required" });
+      return res.status(400).json({
+        success: false,
+        validationErrors:
+          result.error?.issues.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })) ?? "workoutId is required",
+      });
     }
 
     const workout = result.data;
@@ -52,7 +108,25 @@ export const updateWorkout = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "workout updated successfully!" });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "workout");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
@@ -70,19 +144,48 @@ export const deleteWorkout = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "workout updated successfully!" });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "workout");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
 export const importExercises = async (req: Request, res: Response) => {
   try {
-    const result = req.body;
+    const result = ImportExercisesSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ success: false, message: result.error.message });
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
     }
 
     const { workoutId, exercises } = result.data;
-    const newExercises = await Promise.all(exercises.map((e: Exercise) => prisma.exercise.create({ data: e })));
+    const newExercises = await Promise.all(
+      exercises.map((e) => {
+        const { id, ...data } = e;
+        return prisma.exercise.create({ data: data });
+      }),
+    );
 
     const existingCount = await prisma.exerciseWorkout.count({
       where: { workoutId },
@@ -100,6 +203,24 @@ export const importExercises = async (req: Request, res: Response) => {
       .status(200)
       .json({ success: true, idOut: newExercises[0].id, message: "exercises imported successfully!" });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    if (error instanceof PrismaClientValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid data provided",
+      });
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      const errorMessage = messageFromPrismaError(error.code, "workout");
+      return res.status(500).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
