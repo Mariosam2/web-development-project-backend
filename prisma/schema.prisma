@@ -28,6 +28,8 @@ model Workout {
   id               String            @id @default(uuid())
   title            String
   exerciseWorkouts ExerciseWorkout[]
+  description      String
+  duration         Int
   images           Images[]
 }
 

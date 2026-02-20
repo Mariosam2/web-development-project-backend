@@ -1,5 +1,5 @@
 import { IExerciseDetail } from "./IExerciseDetail";
-import { IExercise } from "./IExerciseOverview";
+import { IExerciseOverview } from "./IExerciseOverview";
 import { IExerciseSearch } from "./IExerciseSearch";
 
 export interface IExercisesDbResponse {
@@ -9,5 +9,5 @@ export interface IExercisesDbResponse {
     hasPreviousPage: boolean;
     nextCursor: string;
   };
-  data: IExercise[] | IExerciseSearch[] | IExerciseDetail[];
+  data: IExerciseOverview[] | IExerciseSearch[] | IExerciseDetail[];
 }
