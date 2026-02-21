@@ -1,21 +1,22 @@
 import { Response } from "express";
 import { IApiResponse } from "./interfaces/IApiResponse";
-import { User } from "generated/prisma/client";
+import { Exercise, User } from "@src/../generated/prisma/client";
 import jwt from "jsonwebtoken";
+import { prisma } from "@src/../lib/prisma";
+import { ExerciseSchema } from "./schemas/ExerciseSchema";
+import * as z from "zod";
 export const fetchTyped = async <T>(url: string, method: string = "GET"): Promise<IApiResponse<T> | string> => {
-  try {
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "X-RapidAPI-Key": getEnvOrThrow("RAPID_API_KEY"),
-      },
-    });
-
-    return response.json() as Promise<IApiResponse<T>>;
-  } catch (error) {
-    return (error as Error).message;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "X-RapidAPI-Key": getEnvOrThrow("RAPID_API_KEY"),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   }
+  return res.json();
 };
 
 export const getEnvOrThrow = (variableName: string): string => {
@@ -64,4 +65,32 @@ export const messageFromPrismaError = (errorCode: string, model: string) => {
     default:
       return "unknown error";
   }
+};
+
+export const saveExercisesAndOrderRelations = async (
+  exercises: z.infer<typeof ExerciseSchema>[],
+  workoutId: string,
+) => {
+  const newExercises = await Promise.all(
+    exercises.map((e) => {
+      const { exerciseId: id, ...data } = e;
+      return prisma.exercise.upsert({
+        where: { id },
+        create: data,
+        update: {},
+      });
+    }),
+  );
+
+  await prisma.exerciseWorkout.deleteMany({ where: { workoutId } });
+
+  await prisma.exerciseWorkout.createMany({
+    data: newExercises.map((e: Exercise, index) => ({
+      workoutId,
+      exerciseId: e.id,
+      exerciseOrder: index + 1,
+    })),
+  });
+
+  return newExercises;
 };

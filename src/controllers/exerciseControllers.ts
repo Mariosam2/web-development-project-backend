@@ -16,7 +16,7 @@ export const exercises = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ success: true, data: exercises });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -28,7 +28,7 @@ export const singleExercise = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ success: true, data: exercise });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -37,7 +37,7 @@ export const bodyParts = async (req: Request, res: Response) => {
     const bodyParts = await fetchTyped<IBodyPart[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/bodyparts`);
     return res.status(200).json({ success: true, data: bodyParts });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 export const targetMuscles = async (req: Request, res: Response) => {
@@ -45,7 +45,7 @@ export const targetMuscles = async (req: Request, res: Response) => {
     const bodyParts = await fetchTyped<ITargetMuscle[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/muscles`);
     return res.status(200).json({ success: true, data: bodyParts });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -54,6 +54,6 @@ export const exerciseTypes = async (req: Request, res: Response) => {
     const types = await fetchTyped<IExerciseType[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercisetypes`);
     return res.status(200).json({ success: true, data: types });
   } catch (error) {
-    return res.status(500).json({ succes: false, message: (error as Error).message });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 };

@@ -1,16 +1,14 @@
 import { LoginSchema } from "@src/shared/schemas/LoginSchema";
 import { UserSchema } from "@src/shared/schemas/UserSchema";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "@src/../lib/prisma";
 import bcrypt from "bcrypt";
-import { generateTokensAndCookie, getEnvOrThrow, messageFromPrismaError } from "@src/shared/helpers";
+import { generateTokensAndCookie, getEnvOrThrow } from "@src/shared/helpers";
 import { RegisterSchema } from "@src/shared/schemas/RegisterSchema";
 import { ITokenPayload } from "@src/shared/interfaces/ITokenPayload";
-import { PrismaClientValidationError } from "@prisma/client/runtime/client";
-import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaNamespace";
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = LoginSchema.safeParse(req.body);
     if (!result.success) {
@@ -25,43 +23,21 @@ export const login = async (req: Request, res: Response) => {
 
     const { username, email, password } = result.data;
 
-    const authUser = await prisma.user.findFirst({ where: { OR: [{ username }, { email }] } });
-    if (!authUser) {
-      return res.status(404).json({ success: false, message: "user not found" });
-    }
-
+    const authUser = await prisma.user.findFirstOrThrow({ where: { OR: [{ username }, { email }] } });
     const isPasswordCorrect = await bcrypt.compare(password, authUser.password ?? "");
     if (!isPasswordCorrect) {
-      return res.status(401).json({ success: false, message: "unaurthorized" });
+      return res.status(401).json({ success: false, message: "Unaurthorized" });
     }
 
     const accessToken = generateTokensAndCookie(authUser, res);
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    if (error instanceof PrismaClientValidationError) {
-      return res.status(400).json({
-        success: false,
-        message: "invalid data provided",
-      });
-    }
-
-    if (error instanceof PrismaClientKnownRequestError) {
-      const errorMessage = messageFromPrismaError(error.code, "user");
-      return res.status(500).json({
-        success: false,
-        message: errorMessage,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: (error as Error).message,
-    });
+    next(error);
   }
 };
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = RegisterSchema.safeParse(req.body);
 
@@ -82,68 +58,46 @@ export const register = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    if (error instanceof PrismaClientValidationError) {
-      return res.status(400).json({
-        success: false,
-        message: "invalid data provided",
-      });
-    }
-
-    if (error instanceof PrismaClientKnownRequestError) {
-      const errorMessage = messageFromPrismaError(error.code, "user");
-      return res.status(500).json({
-        success: false,
-        message: errorMessage,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: (error as Error).message,
-    });
+    next(error);
   }
 };
 
-export const refreshToken = async (req: Request, res: Response) => {
+export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
-      return res.status(401).json({ success: false, message: "unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const decoded = jwt.verify(refreshToken, getEnvOrThrow("JWT_REFRESH_SECRET")) as ITokenPayload;
     if (!decoded) {
-      return res.status(401).json({ success: false, message: "unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const authUser = await prisma.user.findFirst({ where: { id: decoded.id } });
-    if (!authUser) {
-      return res.status(401).json({ success: false, message: "unauthorized" });
+    if (!authUser || authUser.tokenVersion !== decoded.tokenVersion) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const accessToken = generateTokensAndCookie(authUser, res);
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    if (error instanceof PrismaClientValidationError) {
-      return res.status(400).json({
-        success: false,
-        message: "invalid data provided",
-      });
-    }
+    next(error);
+  }
+};
 
-    if (error instanceof PrismaClientKnownRequestError) {
-      const errorMessage = messageFromPrismaError(error.code, "user");
-      return res.status(500).json({
-        success: false,
-        message: errorMessage,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: (error as Error).message,
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = req.user as Express.User;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
     });
+
+    res.clearCookie("refreshToken").status(200).json({ success: true });
+  } catch (error) {
+    next(error);
   }
 };
 
