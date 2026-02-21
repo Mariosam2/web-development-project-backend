@@ -7,7 +7,7 @@ import { IExerciseType } from "@src/shared/interfaces/ExerciseDb/IExerciseType";
 import { ITargetMuscle } from "@src/shared/interfaces/ExerciseDb/ITargetMuscle";
 import { IExerciseDetail } from "@src/shared/interfaces/ExerciseDb/IExerciseDetail";
 
-export const exercisesFromExerciseDb = async (req: Request, res: Response) => {
+export const exercises = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
 
@@ -49,7 +49,7 @@ export const targetMuscles = async (req: Request, res: Response) => {
   }
 };
 
-export const types = async (req: Request, res: Response) => {
+export const exerciseTypes = async (req: Request, res: Response) => {
   try {
     const types = await fetchTyped<IExerciseType[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercisetypes`);
     return res.status(200).json({ success: true, data: types });

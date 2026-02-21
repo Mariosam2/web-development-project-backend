@@ -38,6 +38,7 @@ CREATE TABLE `Workout` (
     `title` VARCHAR(191) NOT NULL,
     `estimatedDuration` INTEGER NULL,
     `imageId` VARCHAR(191) NULL,
+    `userId` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `Workout_imageId_key`(`imageId`),
     PRIMARY KEY (`id`)
@@ -65,6 +66,9 @@ ALTER TABLE `User` ADD CONSTRAINT `User_imageId_fkey` FOREIGN KEY (`imageId`) RE
 
 -- AddForeignKey
 ALTER TABLE `Workout` ADD CONSTRAINT `Workout_imageId_fkey` FOREIGN KEY (`imageId`) REFERENCES `Image`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Workout` ADD CONSTRAINT `Workout_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `ExerciseWorkout` ADD CONSTRAINT `ExerciseWorkout_workoutId_fkey` FOREIGN KEY (`workoutId`) REFERENCES `Workout`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -11,7 +11,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     if (!decoded) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    req.user = decoded;
+    req.user = decoded as Express.User;
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {

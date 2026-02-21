@@ -1,3 +1,3 @@
-import { IBodyPart } from "./IBodyPart";
+import type { IBodyPart } from "./IBodyPart";
 
-export interface IExerciseType extends IBodyPart {}
+export type IExerciseType = IBodyPart;

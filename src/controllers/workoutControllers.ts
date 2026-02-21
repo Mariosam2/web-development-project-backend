@@ -9,7 +9,10 @@ import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaN
 
 export const workouts = async (req: Request, res: Response) => {
   try {
-    const workouts = await prisma.workout.findMany();
+    if (!req.user) return res.status(403).json({ success: false, message: "user is not logged in" });
+    const { userId } = req.user;
+    const workouts = await prisma.workout.findMany({ where: { userId } });
+
     return res.status(200).json({ success: true, data: workouts });
   } catch (error) {
     return res.status(500).json({
@@ -61,7 +64,10 @@ export const addWorkout = async (req: Request, res: Response) => {
       });
     }
 
-    const workout = result.data;
+    if (!req.user) return res.status(403).json({ success: false, message: "user is not logged in" });
+
+    const { userId } = req.user;
+    const workout = { ...result.data, userId };
     const newWorkout = await prisma.workout.create({ data: workout });
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "workout created successfully!" });

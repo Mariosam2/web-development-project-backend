@@ -28,7 +28,7 @@ export const getEnvOrThrow = (variableName: string): string => {
 
 export const generateTokensAndCookie = (user: User, res: Response) => {
   const accessToken = jwt.sign(
-    { id: user.id, username: user.username, email: user.email },
+    { userId: user.id, username: user.username, email: user.email },
     getEnvOrThrow("JWT_SECRET"),
     {
       expiresIn: "15m",

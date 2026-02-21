@@ -82,7 +82,6 @@ export const register = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    console.log(error);
     if (error instanceof PrismaClientValidationError) {
       return res.status(400).json({
         success: false,
