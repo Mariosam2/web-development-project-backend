@@ -26,7 +26,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const authUser = await prisma.user.findFirstOrThrow({ where: { OR: [{ username }, { email }] } });
     const isPasswordCorrect = await bcrypt.compare(password, authUser.password ?? "");
     if (!isPasswordCorrect) {
-      return res.status(401).json({ success: false, message: "Unaurthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const accessToken = generateTokensAndCookie(authUser, res);
@@ -83,6 +83,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };

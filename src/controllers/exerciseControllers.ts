@@ -11,10 +11,17 @@ export const exercises = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
 
-    const exercises = await fetchTyped<IExerciseOverview[]>(
+    const result = await fetchTyped<IExerciseOverview[]>(
       getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercises?name${query}`,
     );
-    return res.status(200).json({ success: true, data: exercises });
+
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+
+    const { meta, data: exercises } = result;
+
+    return res.status(200).json({ success: true, meta, data: exercises });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });
   }
@@ -23,9 +30,16 @@ export const exercises = async (req: Request, res: Response) => {
 export const singleExercise = async (req: Request, res: Response) => {
   try {
     const { exerciseId } = req.params;
-    const exercise = await fetchTyped<IExerciseDetail>(
+    const result = await fetchTyped<IExerciseDetail>(
       getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercises/${exerciseId}`,
     );
+
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+
+    const { data: exercise } = result;
+
     return res.status(200).json({ success: true, data: exercise });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });
