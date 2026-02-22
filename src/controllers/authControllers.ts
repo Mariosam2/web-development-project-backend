@@ -83,7 +83,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    console.log(error);
+    res.clearCookie("refreshToken");
     next(error);
   }
 };
