@@ -8,11 +8,7 @@ import { generateTokensAndCookie, getEnvOrThrow } from "@src/shared/helpers";
 import { RegisterSchema } from "@src/shared/schemas/RegisterSchema";
 import { ITokenPayload } from "@src/shared/interfaces/ITokenPayload";
 
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = LoginSchema.safeParse(req.body);
     if (!result.success) {
@@ -30,10 +26,7 @@ export const login = async (
     const authUser = await prisma.user.findFirstOrThrow({
       where: { OR: [{ username }, { email }] },
     });
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      authUser.password ?? "",
-    );
+    const isPasswordCorrect = await bcrypt.compare(password, authUser.password ?? "");
     if (!isPasswordCorrect) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -46,21 +39,14 @@ export const login = async (
   }
 };
 
-export const checkAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const checkAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const decoded = jwt.verify(
-      refreshToken,
-      getEnvOrThrow("JWT_REFRESH_SECRET"),
-    ) as ITokenPayload;
+    const decoded = jwt.verify(refreshToken, getEnvOrThrow("JWT_REFRESH_SECRET")) as ITokenPayload;
     if (!decoded) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -76,11 +62,7 @@ export const checkAuth = async (
   }
 };
 
-export const register = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = RegisterSchema.safeParse(req.body);
 
@@ -103,25 +85,19 @@ export const register = async (
 
     return res.status(200).json({ success: true, accessToken });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
 
-export const refreshToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const decoded = jwt.verify(
-      refreshToken,
-      getEnvOrThrow("JWT_REFRESH_SECRET"),
-    ) as ITokenPayload;
+    const decoded = jwt.verify(refreshToken, getEnvOrThrow("JWT_REFRESH_SECRET")) as ITokenPayload;
     if (!decoded) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -140,11 +116,7 @@ export const refreshToken = async (
   }
 };
 
-export const logout = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId } = req.user as Express.User;
     await prisma.user.update({
@@ -171,18 +143,10 @@ export const googleAuthCallbak = (req: Request, res: Response) => {
   }
 
   const user = result.data;
-  const accessToken = jwt.sign(
-    { id: user.id, email: user.email },
-    getEnvOrThrow("JWT_SECRET"),
-    { expiresIn: "15m" },
-  );
-  const refreshToken = jwt.sign(
-    { id: user.id, tokenVersion: user.tokenVersion },
-    getEnvOrThrow("JWT_REFRESH_SECRET"),
-    {
-      expiresIn: "7d",
-    },
-  );
+  const accessToken = jwt.sign({ id: user.id, email: user.email }, getEnvOrThrow("JWT_SECRET"), { expiresIn: "15m" });
+  const refreshToken = jwt.sign({ id: user.id, tokenVersion: user.tokenVersion }, getEnvOrThrow("JWT_REFRESH_SECRET"), {
+    expiresIn: "7d",
+  });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -191,7 +155,5 @@ export const googleAuthCallbak = (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.redirect(
-    `${process.env.FRONTEND_URL}/auth/callback?access=${accessToken}`,
-  );
+  res.redirect(`${process.env.FRONTEND_URL}/auth/callback?access=${accessToken}`);
 };

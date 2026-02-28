@@ -48,7 +48,14 @@ export const singleExercise = async (req: Request, res: Response) => {
 
 export const bodyParts = async (req: Request, res: Response) => {
   try {
-    const bodyParts = await fetchTyped<IBodyPart[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/bodyparts`);
+    const result = await fetchTyped<IBodyPart[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/bodyparts`);
+
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+
+    const { data: bodyParts } = result;
+
     return res.status(200).json({ success: true, data: bodyParts });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });
