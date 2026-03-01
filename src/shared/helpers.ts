@@ -73,10 +73,10 @@ export const saveExercisesAndOrderRelations = async (
 ) => {
   const newExercises = await Promise.all(
     exercises.map((e) => {
-      const { exerciseId: id, ...data } = e;
+      const { exerciseId, reps, sets, ...data } = e;
       return prisma.exercise.upsert({
-        where: { id },
-        create: data,
+        where: { exerciseId },
+        create: { exerciseId, ...data },
         update: {},
       });
     }),
@@ -89,6 +89,8 @@ export const saveExercisesAndOrderRelations = async (
       workoutId,
       exerciseId: e.id,
       exerciseOrder: index + 1,
+      reps: exercises[index].reps,
+      sets: exercises[index].sets,
     })),
   });
 

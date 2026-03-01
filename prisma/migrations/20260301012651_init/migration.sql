@@ -20,15 +20,15 @@ CREATE TABLE `User` (
 -- CreateTable
 CREATE TABLE `Exercise` (
     `id` VARCHAR(191) NOT NULL,
+    `exerciseId` CHAR(36) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
+    `description` LONGTEXT NULL,
     `bodyPart` VARCHAR(191) NULL,
     `targetMuscle` VARCHAR(191) NULL,
-    `reps` INTEGER NOT NULL,
-    `sets` INTEGER NOT NULL,
     `imageUrl` VARCHAR(191) NULL,
     `videoUrl` VARCHAR(191) NULL,
 
+    UNIQUE INDEX `Exercise_exerciseId_key`(`exerciseId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -49,6 +49,8 @@ CREATE TABLE `ExerciseWorkout` (
     `workoutId` CHAR(36) NOT NULL,
     `exerciseId` CHAR(36) NOT NULL,
     `exerciseOrder` INTEGER NOT NULL,
+    `reps` INTEGER NOT NULL,
+    `sets` INTEGER NOT NULL,
 
     PRIMARY KEY (`workoutId`, `exerciseId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -6,6 +6,7 @@ import {
 } from "../../generated/prisma/internal/prismaNamespace";
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  console.log(err);
   if (err instanceof PrismaClientValidationError) {
     return res.status(400).json({ success: false, message: "Invalid data provided" });
   }

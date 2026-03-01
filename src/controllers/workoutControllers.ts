@@ -6,9 +6,32 @@ import { NextFunction, Request, Response } from "express";
 
 export const workouts = async (req: Request, res: Response) => {
   const { userId } = req.user as Express.User;
-  const workouts = await prisma.workout.findMany({ where: { userId }, omit: { userId: true } });
 
-  return res.status(200).json({ success: true, data: workouts });
+  const workouts = await prisma.workout.findMany({
+    where: { userId },
+    omit: { userId: true },
+    include: {
+      exerciseWorkouts: {
+        include: {
+          exercise: true,
+        },
+      },
+    },
+  });
+
+  const workoutWithExercises = workouts.map((w) => {
+    const { exerciseWorkouts, ...workout } = w;
+    return {
+      ...workout,
+      exercises: exerciseWorkouts.map(({ exercise, sets, reps }) => ({
+        ...exercise,
+        sets,
+        reps,
+      })),
+    };
+  });
+
+  return res.status(200).json({ success: true, data: workoutWithExercises });
 };
 
 export const exercises = async (req: Request, res: Response) => {
@@ -34,9 +57,15 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
     }
 
     const { userId } = req.user as Express.User;
-    const workout = { ...result.data, userId };
-    const newWorkout = await prisma.workout.create({ data: workout });
-    await saveExercisesAndOrderRelations(workout.exercises, newWorkout.id);
+    const { exercises, ...workout } = result.data;
+
+    const newWorkout = await prisma.workout.create({
+      data: {
+        ...workout,
+        userId,
+      },
+    });
+    await saveExercisesAndOrderRelations(exercises, newWorkout.id);
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "Workout created successfully!" });
   } catch (error) {
