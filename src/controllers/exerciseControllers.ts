@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { fetchTyped, getEnvOrThrow } from "@src/shared/helpers";
+import { createQueryParams, fetchTyped, getEnvOrThrow } from "@src/shared/helpers";
 import { IExerciseOverview } from "@src/shared/interfaces/ExerciseDb/IExerciseOverview";
 import { Request, Response } from "express";
 import { IBodyPart } from "@src/shared/interfaces/ExerciseDb/IBodyPart";
@@ -9,10 +9,9 @@ import { IExerciseDetail } from "@src/shared/interfaces/ExerciseDb/IExerciseDeta
 
 export const exercises = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
-
+    const queryParams = createQueryParams(req);
     const result = await fetchTyped<IExerciseOverview[]>(
-      getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercises?name${query}`,
+      `${getEnvOrThrow("EXERCISEDB_API_BASE_URL")}/exercises?${queryParams.toString()}`,
     );
 
     if (typeof result === "string") {
@@ -63,8 +62,13 @@ export const bodyParts = async (req: Request, res: Response) => {
 };
 export const targetMuscles = async (req: Request, res: Response) => {
   try {
-    const bodyParts = await fetchTyped<ITargetMuscle[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/muscles`);
-    return res.status(200).json({ success: true, data: bodyParts });
+    const result = await fetchTyped<ITargetMuscle[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/muscles`);
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+
+    const { data: targetMuscles } = result;
+    return res.status(200).json({ success: true, data: targetMuscles });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });
   }

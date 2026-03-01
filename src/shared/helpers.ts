@@ -1,9 +1,10 @@
-import { Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { IApiResponse } from "./interfaces/IApiResponse";
 import { Exercise, User } from "@src/../generated/prisma/client";
 import jwt from "jsonwebtoken";
 import { prisma } from "@src/../lib/prisma";
 import { ExerciseSchema } from "./schemas/ExerciseSchema";
+import multer from "multer";
 import * as z from "zod";
 export const fetchTyped = async <T>(url: string, method: string = "GET"): Promise<IApiResponse<T> | string> => {
   const res = await fetch(url, {
@@ -83,7 +84,7 @@ export const saveExercisesAndOrderRelations = async (
   );
 
   await prisma.exerciseWorkout.deleteMany({ where: { workoutId } });
-
+  //console.log(exercises);
   await prisma.exerciseWorkout.createMany({
     data: newExercises.map((e: Exercise, index) => ({
       workoutId,
@@ -95,4 +96,14 @@ export const saveExercisesAndOrderRelations = async (
   });
 
   return newExercises;
+};
+
+export const createQueryParams = (req: Request) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(req.query).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      queryParams.append(key, String(value));
+    }
+  });
+  return queryParams;
 };

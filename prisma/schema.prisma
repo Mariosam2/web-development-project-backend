@@ -63,8 +63,9 @@ model ExerciseWorkout {
 }
 
 model Image {
-  id       String   @id @default(uuid())
-  filename String
-  user     User?
-  workout  Workout?
+  id        String   @id @default(uuid())
+  filename  String
+  user      User?
+  workout   Workout?
+  createdAt DateTime @default(now())
 }

@@ -1,7 +1,9 @@
 import { prisma } from "@src/../lib/prisma";
 import { saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
+import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
+import { createImage, deleteOldImage } from "@src/shared/storage";
 import { NextFunction, Request, Response } from "express";
 
 export const workouts = async (req: Request, res: Response) => {
@@ -11,41 +13,55 @@ export const workouts = async (req: Request, res: Response) => {
     where: { userId },
     omit: { userId: true },
     include: {
+      image: { select: { filename: true } },
+      _count: {
+        select: { exerciseWorkouts: true },
+      },
       exerciseWorkouts: {
+        take: 1,
+        orderBy: { exerciseOrder: "asc" },
         include: {
-          exercise: true,
+          exercise: { select: { imageUrl: true } },
         },
       },
     },
   });
 
-  const workoutWithExercises = workouts.map((w) => {
-    const { exerciseWorkouts, ...workout } = w;
-    return {
-      ...workout,
-      exercises: exerciseWorkouts.map(({ exercise, sets, reps }) => ({
-        ...exercise,
-        sets,
-        reps,
-      })),
-    };
-  });
+  const result = workouts.map(({ image, _count, exerciseWorkouts, ...workout }) => ({
+    ...workout,
+    imageUrl: image ? `/uploads/${image.filename}` : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
+    exerciseCount: _count.exerciseWorkouts,
+  }));
 
-  return res.status(200).json({ success: true, data: workoutWithExercises });
+  return res.status(200).json({ success: true, data: result });
 };
 
 export const exercises = async (req: Request, res: Response) => {
   const { workoutId } = req.params;
-  const exercises = await prisma.exercise.findMany({
-    where: { id: workoutId as string },
+  const exerciseWorkouts = await prisma.exerciseWorkout.findMany({
+    where: { workoutId: workoutId as string },
+    include: { exercise: true },
+    orderBy: { exerciseOrder: "asc" },
   });
+
+  const exercises = exerciseWorkouts.map(({ exercise, sets, reps }) => ({
+    ...exercise,
+    sets,
+    reps,
+  }));
 
   return res.status(200).json({ success: true, data: exercises });
 };
 
 export const addWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = WorkoutSchema.safeParse(req.body);
+    const raw = {
+      title: req.body.title,
+      estimatedDuration: Number(req.body.estimatedDuration),
+      exercises: JSON.parse(req.body.exercises),
+    };
+
+    const result = WorkoutSchema.safeParse(raw);
     if (!result.success) {
       return res.status(400).json({
         success: false,
@@ -55,7 +71,7 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
         })),
       });
     }
-
+    const imageId = await createImage(req.file);
     const { userId } = req.user as Express.User;
     const { exercises, ...workout } = result.data;
 
@@ -63,6 +79,7 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
       data: {
         ...workout,
         userId,
+        imageId,
       },
     });
     await saveExercisesAndOrderRelations(exercises, newWorkout.id);
@@ -76,7 +93,13 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
 export const updateWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workoutId } = req.params;
-    const result = WorkoutSchema.safeParse(req.body);
+    const raw = {
+      title: req.body.title,
+      estimatedDuration: Number(req.body.estimatedDuration),
+      exercises: JSON.parse(req.body.exercises),
+    };
+
+    const result = WorkoutSchema.safeParse(raw);
     if (!result.success || !workoutId) {
       return res.status(400).json({
         success: false,
@@ -87,14 +110,20 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
           })) ?? "WorkoutId is required",
       });
     }
+    const { exercises, ...workout } = result.data;
+    await deleteOldImage(workoutId as string, req.file);
+    const imageId = await createImage(req.file);
+    console.log("IMAGE ID", imageId);
 
-    const workout = result.data;
-    const newWorkout = await prisma.workout.update({ where: { id: workoutId as string }, data: workout });
-
-    await saveExercisesAndOrderRelations(workout.exercises, newWorkout.id);
+    const newWorkout = await prisma.workout.update({
+      where: { id: workoutId as string },
+      data: { ...workout, imageId },
+    });
+    await saveExercisesAndOrderRelations(exercises, newWorkout.id);
 
     return res.status(200).json({ success: true, idOut: newWorkout.id, message: "Workout updated successfully!" });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -137,7 +166,43 @@ export const importExercises = async (req: Request, res: Response, next: NextFun
 
     return res
       .status(200)
-      .json({ success: true, idOut: newExercises[0].id, message: "exercises imported successfully!" });
+      .json({ success: true, idOut: newExercises.map((e) => e.id), message: "exercises imported successfully!" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeExercises = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = RemoveExercisesSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
+    }
+
+    const { exercisesIds, workoutId } = result.data;
+
+    const totalExercises = await prisma.exerciseWorkout.count({
+      where: { workoutId },
+    });
+
+    if (exercisesIds.length >= totalExercises) {
+      return res.status(400).json({ success: false, message: "A workout must have at least one exercise" });
+    }
+
+    await prisma.exerciseWorkout.deleteMany({
+      where: {
+        workoutId,
+        exerciseId: { in: exercisesIds },
+      },
+    });
+
+    return res.status(200).json({ success: true, idOut: exercisesIds, message: "exercises imported successfully!" });
   } catch (error) {
     next(error);
   }
