@@ -1,16 +1,40 @@
 import { prisma } from "@src/../lib/prisma";
-import { saveExercisesAndOrderRelations } from "@src/shared/helpers";
+import { createQueryParams, saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
+import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
 import { createImage, deleteOldImage } from "@src/shared/storage";
 import { NextFunction, Request, Response } from "express";
 
 export const workouts = async (req: Request, res: Response) => {
   const { userId } = req.user as Express.User;
+  const queryParams = req.query;
+
+  const validatedParams = workoutQuerySchema.safeParse(queryParams);
+  console.log(validatedParams);
+  if (!validatedParams.success) {
+    return res.status(400).json({
+      success: false,
+      validationErrors: validatedParams.error.issues.map((e) => ({
+        field: e.path.join("."),
+        message: e.message,
+      })),
+    });
+  }
+
+  const { data: params } = validatedParams;
+  console.log(params);
 
   const workouts = await prisma.workout.findMany({
-    where: { userId },
+    take: params.limit,
+    where: {
+      userId,
+      ...(params.query && { title: { contains: params.query } }),
+      ...(params.startDate && { createdAt: { gte: params.startDate } }),
+      ...(params.endDate && { createdAt: { lte: params.endDate } }),
+      ...(params.isCompleted !== undefined && { completed: params.isCompleted }),
+    },
     omit: { userId: true },
     include: {
       image: { select: { filename: true } },
@@ -32,6 +56,39 @@ export const workouts = async (req: Request, res: Response) => {
     imageUrl: image ? `/uploads/${image.filename}` : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
     exerciseCount: _count.exerciseWorkouts,
   }));
+
+  return res.status(200).json({ success: true, data: result });
+};
+export const singleWorkout = async (req: Request, res: Response) => {
+  const { userId } = req.user as Express.User;
+  const { workoutId } = req.params;
+
+  const workout = await prisma.workout.findFirst({
+    where: { userId, id: workoutId as string },
+    omit: { userId: true },
+    include: {
+      image: { select: { filename: true } },
+      _count: {
+        select: { exerciseWorkouts: true },
+      },
+      exerciseWorkouts: {
+        take: 1,
+        orderBy: { exerciseOrder: "asc" },
+        include: {
+          exercise: { select: { imageUrl: true } },
+        },
+      },
+    },
+  });
+
+  if (!workout) return res.status(404).json({ success: false, message: "Workout not found" });
+
+  const { image, _count, exerciseWorkouts, ...rest } = workout;
+  const result = {
+    ...rest,
+    imageUrl: image ? `/uploads/${image.filename}` : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
+    exerciseCount: _count.exerciseWorkouts,
+  };
 
   return res.status(200).json({ success: true, data: result });
 };
@@ -186,7 +243,6 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
     }
 
     const { exercisesIds, workoutId } = result.data;
-
     const totalExercises = await prisma.exerciseWorkout.count({
       where: { workoutId },
     });
@@ -204,6 +260,20 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
 
     return res.status(200).json({ success: true, idOut: exercisesIds, message: "exercises imported successfully!" });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const completeWorkout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { workoutId } = req.params;
+    await prisma.workout.update({
+      where: { id: workoutId as string },
+      data: { completed: true, completedAt: new Date() },
+    });
+    return res.status(200).json({ success: true, idOut: workoutId, message: "Workout completed successfully!" });
+  } catch (error) {
+    console.log(error);
     next(error);
   }
 };

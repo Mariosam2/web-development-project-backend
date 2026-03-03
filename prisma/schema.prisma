@@ -44,6 +44,9 @@ model Workout {
   title             String
   exerciseWorkouts  ExerciseWorkout[]
   estimatedDuration Int?
+  completed         Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  completedAt       DateTime?
   imageId           String?           @unique
   image             Image?            @relation(fields: [imageId], references: [id])
   userId            String

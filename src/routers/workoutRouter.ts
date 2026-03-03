@@ -1,9 +1,11 @@
 import {
   addWorkout,
+  completeWorkout,
   deleteWorkout,
   exercises,
   importExercises,
   removeExercises,
+  singleWorkout,
   updateWorkout,
   workouts,
 } from "@src/controllers/workoutControllers";
@@ -13,11 +15,13 @@ import { Router } from "express";
 const workoutRouter = Router();
 
 workoutRouter.get("/", workouts);
-workoutRouter.get("/exercises/:workoutId", exercises);
 workoutRouter.post("/add-workout", handleUpload("image"), addWorkout);
-workoutRouter.put("/update-workout/:workoutId", handleUpload("image"), updateWorkout);
-workoutRouter.delete("/delete-workout/:workoutId", deleteWorkout);
 workoutRouter.post("/remove-exercises", removeExercises);
 workoutRouter.post("/import-exercises", importExercises);
+workoutRouter.patch("/complete-workout/:workoutId", completeWorkout);
+workoutRouter.put("/update-workout/:workoutId", updateWorkout);
+workoutRouter.delete("/delete-workout/:workoutId", deleteWorkout);
+workoutRouter.get("/exercises/:workoutId", exercises);
+workoutRouter.get("/:workoutId", singleWorkout);
 
 export default workoutRouter;
