@@ -48,6 +48,15 @@ CREATE TABLE `Workout` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `CompletedWorkout` (
+    `workoutId` CHAR(36) NOT NULL,
+    `userId` CHAR(36) NOT NULL,
+    `completedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`workoutId`, `userId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `ExerciseWorkout` (
     `workoutId` CHAR(36) NOT NULL,
     `exerciseId` CHAR(36) NOT NULL,
@@ -75,6 +84,12 @@ ALTER TABLE `Workout` ADD CONSTRAINT `Workout_imageId_fkey` FOREIGN KEY (`imageI
 
 -- AddForeignKey
 ALTER TABLE `Workout` ADD CONSTRAINT `Workout_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CompletedWorkout` ADD CONSTRAINT `CompletedWorkout_workoutId_fkey` FOREIGN KEY (`workoutId`) REFERENCES `Workout`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CompletedWorkout` ADD CONSTRAINT `CompletedWorkout_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `ExerciseWorkout` ADD CONSTRAINT `ExerciseWorkout_workoutId_fkey` FOREIGN KEY (`workoutId`) REFERENCES `Workout`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

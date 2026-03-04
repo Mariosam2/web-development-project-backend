@@ -1,5 +1,5 @@
 import { prisma } from "@src/../lib/prisma";
-import { createQueryParams, saveExercisesAndOrderRelations } from "@src/shared/helpers";
+import { saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
 import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
@@ -24,7 +24,6 @@ export const workouts = async (req: Request, res: Response) => {
   }
 
   const { data: params } = validatedParams;
-  console.log(params);
 
   const workouts = await prisma.workout.findMany({
     take: params.limit,
@@ -150,6 +149,7 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
 export const updateWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workoutId } = req.params;
+    console.log(req.body);
     const raw = {
       title: req.body.title,
       estimatedDuration: Number(req.body.estimatedDuration),
@@ -266,11 +266,17 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
 
 export const completeWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { userId } = req.user as Express.User;
     const { workoutId } = req.params;
+
+    const completedAt = new Date();
+
     await prisma.workout.update({
       where: { id: workoutId as string },
-      data: { completed: true, completedAt: new Date() },
+      data: { completed: true, completedAt },
     });
+    await prisma.completedWorkout.create({ data: { workoutId: workoutId as string, userId, completedAt } });
+
     return res.status(200).json({ success: true, idOut: workoutId, message: "Workout completed successfully!" });
   } catch (error) {
     console.log(error);
