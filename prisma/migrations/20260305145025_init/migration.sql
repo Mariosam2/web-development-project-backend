@@ -51,7 +51,7 @@ CREATE TABLE `Workout` (
 CREATE TABLE `CompletedWorkout` (
     `workoutId` CHAR(36) NOT NULL,
     `userId` CHAR(36) NOT NULL,
-    `completedAt` DATETIME(3) NOT NULL,
+    `completedAt` DATE NOT NULL,
 
     PRIMARY KEY (`workoutId`, `userId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

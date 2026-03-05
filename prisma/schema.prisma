@@ -60,7 +60,7 @@ model CompletedWorkout {
   workout     Workout  @relation(fields: [workoutId], references: [id])
   userId      String   @db.Char(36)
   user        User     @relation(fields: [userId], references: [id])
-  completedAt DateTime
+  completedAt DateTime @db.Date
 
   @@id([workoutId, userId])
 }

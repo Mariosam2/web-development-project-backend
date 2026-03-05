@@ -12,7 +12,7 @@ export const workouts = async (req: Request, res: Response) => {
   const queryParams = req.query;
 
   const validatedParams = workoutQuerySchema.safeParse(queryParams);
-  console.log(validatedParams);
+  //console.log(validatedParams);
   if (!validatedParams.success) {
     return res.status(400).json({
       success: false,
@@ -149,7 +149,7 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
 export const updateWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workoutId } = req.params;
-    console.log(req.body);
+    //console.log(req.body);
     const raw = {
       title: req.body.title,
       estimatedDuration: Number(req.body.estimatedDuration),
@@ -170,7 +170,7 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
     const { exercises, ...workout } = result.data;
     await deleteOldImage(workoutId as string, req.file);
     const imageId = await createImage(req.file);
-    console.log("IMAGE ID", imageId);
+    //console.log("IMAGE ID", imageId);
 
     const newWorkout = await prisma.workout.update({
       where: { id: workoutId as string },

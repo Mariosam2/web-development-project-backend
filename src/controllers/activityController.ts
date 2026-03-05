@@ -2,9 +2,19 @@ import { NextFunction, Request, Response } from "express";
 import { prisma } from "@src/../lib/prisma";
 export const completedWorkouts = async (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.user as Express.User;
-  const completedWorkouts = await prisma.completedWorkout.findMany({ where: { userId } });
+  const completedWorkouts = await prisma.completedWorkout.groupBy({
+    by: ["completedAt"],
+    where: { userId },
+    _count: { workoutId: true },
+    orderBy: { completedAt: "desc" },
+  });
 
-  return res.status(200).json({ success: true, data: completedWorkouts });
+  const data = completedWorkouts.map((g) => ({
+    date: g.completedAt.toISOString().split("T")[0],
+    count: g._count.workoutId,
+  }));
+
+  return res.status(200).json({ success: true, data });
 };
 export const statistics = async (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.user as Express.User;
@@ -33,7 +43,7 @@ export const statistics = async (req: Request, res: Response, next: NextFunction
   }
 
   const statistics = {
-    workouts: workouts.length,
+    workoutsCount: workouts.length,
     totalWorkoutsDuration,
     streak,
   };
