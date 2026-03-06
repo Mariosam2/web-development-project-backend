@@ -68,7 +68,7 @@ export const createImage = async (file?: Express.Multer.File) => {
   return imageId;
 };
 
-export const deleteOldImage = async (oldImageId: string, file?: Express.Multer.File) => {
+export const deleteOldImage = async (oldImageId: string) => {
   const oldWorkout = await prisma.workout.findUnique({
     where: { id: oldImageId },
     include: { image: true },

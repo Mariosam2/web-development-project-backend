@@ -6,6 +6,7 @@ import cors from "cors";
 import { getEnvOrThrow } from "./shared/helpers";
 import { errorHandler } from "./middlewares/errorHandler";
 import cookieParser from "cookie-parser";
+import "./shared/cron-job";
 
 const app = express();
 const port = "3000";

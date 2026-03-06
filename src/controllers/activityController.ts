@@ -19,7 +19,15 @@ export const completedWorkouts = async (req: Request, res: Response, next: NextF
 export const statistics = async (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.user as Express.User;
 
-  const workouts = await prisma.workout.findMany({ where: { userId } });
+  const workouts = await prisma.workout.findMany({
+    where: {
+      userId,
+      completed: true,
+      completedAt: {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      },
+    },
+  });
   const totalWorkoutsDuration = workouts.reduce((acc, curr) => acc + (curr.estimatedDuration ?? 0), 0);
 
   const daysWithCompletedWorkout = await prisma.completedWorkout.findMany({

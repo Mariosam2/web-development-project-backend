@@ -149,11 +149,11 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
 export const updateWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workoutId } = req.params;
-    //console.log(req.body);
     const raw = {
       title: req.body.title,
       estimatedDuration: Number(req.body.estimatedDuration),
       exercises: JSON.parse(req.body.exercises),
+      imageRemoved: req.body.imageRemoved,
     };
 
     const result = WorkoutSchema.safeParse(raw);
@@ -167,10 +167,18 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
           })) ?? "WorkoutId is required",
       });
     }
-    const { exercises, ...workout } = result.data;
-    await deleteOldImage(workoutId as string, req.file);
-    const imageId = await createImage(req.file);
-    //console.log("IMAGE ID", imageId);
+    const { exercises, imageRemoved, ...workout } = result.data;
+
+    let imageId = workout.imageId;
+    console.log(req.file, imageRemoved);
+
+    if (req.file) {
+      await deleteOldImage(workoutId as string);
+      imageId = await createImage(req.file);
+    } else if (imageRemoved) {
+      await deleteOldImage(workoutId as string);
+      imageId = undefined;
+    }
 
     const newWorkout = await prisma.workout.update({
       where: { id: workoutId as string },
@@ -191,7 +199,8 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
     if (!workoutId) {
       return res.status(400).json({ success: false, message: "WorkoutId is required" });
     }
-
+    await deleteOldImage(workoutId as string);
+    await prisma.image.deleteMany({ where: { workout: { id: workoutId as string } } });
     await prisma.exerciseWorkout.deleteMany({ where: { workoutId: workoutId as string } });
 
     const deletedWorkout = await prisma.workout.delete({ where: { id: workoutId as string } });
@@ -242,7 +251,7 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
       });
     }
 
-    const { exercisesIds, workoutId } = result.data;
+    const { exercisesIds, workoutId, updatedDuration } = result.data;
     const totalExercises = await prisma.exerciseWorkout.count({
       where: { workoutId },
     });
@@ -251,6 +260,10 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
       return res.status(400).json({ success: false, message: "A workout must have at least one exercise" });
     }
 
+    await prisma.workout.update({
+      where: { id: workoutId as string },
+      data: { estimatedDuration: updatedDuration },
+    });
     await prisma.exerciseWorkout.deleteMany({
       where: {
         workoutId,

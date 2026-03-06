@@ -7,4 +7,8 @@ export const WorkoutSchema = z.object({
   imageId: z.guid("invalid GUID format").optional(),
   estimatedDuration: z.number().positive().optional(),
   exercises: z.array(ExerciseSchema),
+  imageRemoved: z
+    .string()
+    .transform((val) => val === "true")
+    .optional(),
 });
