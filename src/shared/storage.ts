@@ -6,15 +6,16 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { IImageOptions } from "./interfaces/IImageOptions";
 
-const UPLOAD__DIR = getEnvOrThrow("UPLOADS_DIR");
+const getUploadDir = () => getEnvOrThrow("UPLOADS_DIR");
 
-if (!fs.existsSync(UPLOAD__DIR)) {
-  fs.mkdirSync(UPLOAD__DIR, { recursive: true });
+if (!fs.existsSync(getUploadDir())) {
+  fs.mkdirSync(getUploadDir(), { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD__DIR),
+  destination: (req, file, cb) => cb(null, getUploadDir()),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     console.log(file);
@@ -68,14 +69,49 @@ export const createImage = async (file?: Express.Multer.File) => {
   return imageId;
 };
 
-export const deleteOldImage = async (oldImageId: string) => {
-  const oldWorkout = await prisma.workout.findUnique({
-    where: { id: oldImageId },
-    include: { image: true },
-  });
+export type ModelsWithImage = "workout" | "user";
+export const deleteOldImage = async (modelId: string, modelName: ModelsWithImage) => {
+  let imageId: string | null = null;
+  let imageFilename: string | null = null;
 
-  if (oldWorkout?.image) {
-    await fsp.unlink(path.join(getEnvOrThrow("UPLOADS_DIR"), oldWorkout.image.filename)).catch(() => {});
-    await prisma.image.delete({ where: { id: oldWorkout.image.id } });
+  switch (modelName) {
+    case "workout": {
+      const record = await prisma.workout.findUnique({
+        where: { id: modelId },
+        include: { image: true },
+      });
+      imageId = record?.image?.id ?? null;
+      imageFilename = record?.image?.filename ?? null;
+      break;
+    }
+    case "user": {
+      const record = await prisma.user.findUnique({
+        where: { id: modelId },
+        include: { image: true },
+      });
+      imageId = record?.image?.id ?? null;
+      imageFilename = record?.image?.filename ?? null;
+      break;
+    }
   }
+
+  if (imageFilename) {
+    await fsp.unlink(path.join(getUploadDir(), imageFilename)).catch(() => {});
+  }
+  if (imageId) {
+    await prisma.image.delete({ where: { id: imageId } });
+  }
+};
+
+export const handleImage = async (imageId: string | undefined, imageOptions: IImageOptions) => {
+  const { req, imageRemoved, modelId, modelName } = imageOptions;
+  if (req.file) {
+    await deleteOldImage(modelId as string, modelName);
+    imageId = await createImage(req.file);
+  } else if (imageRemoved) {
+    await deleteOldImage(modelId as string, modelName);
+    imageId = undefined;
+  }
+
+  return imageId;
 };

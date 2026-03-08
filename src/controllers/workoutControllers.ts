@@ -1,10 +1,11 @@
 import { prisma } from "@src/../lib/prisma";
 import { saveExercisesAndOrderRelations } from "@src/shared/helpers";
+import { IImageOptions } from "@src/shared/interfaces/IImageOptions";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
 import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
-import { createImage, deleteOldImage } from "@src/shared/storage";
+import { createImage, deleteOldImage, handleImage } from "@src/shared/storage";
 import { NextFunction, Request, Response } from "express";
 
 export const workouts = async (req: Request, res: Response) => {
@@ -12,7 +13,7 @@ export const workouts = async (req: Request, res: Response) => {
   const queryParams = req.query;
 
   const validatedParams = workoutQuerySchema.safeParse(queryParams);
-  //console.log(validatedParams);
+
   if (!validatedParams.success) {
     return res.status(400).json({
       success: false,
@@ -153,6 +154,7 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
       title: req.body.title,
       estimatedDuration: Number(req.body.estimatedDuration),
       exercises: JSON.parse(req.body.exercises),
+      imageId: req.body.imageId,
       imageRemoved: req.body.imageRemoved,
     };
 
@@ -169,17 +171,13 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
     }
     const { exercises, imageRemoved, ...workout } = result.data;
 
-    let imageId = workout.imageId;
-    console.log(req.file, imageRemoved);
-
-    if (req.file) {
-      await deleteOldImage(workoutId as string);
-      imageId = await createImage(req.file);
-    } else if (imageRemoved) {
-      await deleteOldImage(workoutId as string);
-      imageId = undefined;
-    }
-
+    const imageOptions: IImageOptions = {
+      req,
+      ...(imageRemoved && { imageRemoved }),
+      modelId: workout.id,
+      modelName: "workout",
+    };
+    const imageId = await handleImage(workout.imageId, imageOptions);
     const newWorkout = await prisma.workout.update({
       where: { id: workoutId as string },
       data: { ...workout, imageId },
@@ -199,7 +197,7 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
     if (!workoutId) {
       return res.status(400).json({ success: false, message: "WorkoutId is required" });
     }
-    await deleteOldImage(workoutId as string);
+    await deleteOldImage(workoutId as string, "workout");
     await prisma.image.deleteMany({ where: { workout: { id: workoutId as string } } });
     await prisma.exerciseWorkout.deleteMany({ where: { workoutId: workoutId as string } });
 
