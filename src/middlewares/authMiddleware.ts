@@ -1,3 +1,4 @@
+import { getEnvOrThrow } from "@src/shared/helpers";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
@@ -7,7 +8,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     if (!accessToken) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET as string);
+    const decoded = jwt.verify(accessToken, getEnvOrThrow("JWT_SECRET"));
     if (!decoded) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }

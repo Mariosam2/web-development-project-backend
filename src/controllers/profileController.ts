@@ -3,24 +3,26 @@ import { prisma } from "@src/../lib/prisma";
 import { ProfileSettingsSchema } from "@src/shared/schemas/ProfileSchema";
 import { IImageOptions } from "@src/shared/interfaces/IImageOptions";
 import { handleImage } from "@src/shared/storage";
+import { getUserLevel } from "@src/shared/helpers";
 
 export const singleProfile = async (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.user as Express.User;
+  const { id: userId } = req.user as Express.User;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { firstname: true, lastname: true, username: true, email: true, image: true, imageId: true },
   });
 
   if (!user) return res.status(404).json({ success: false, message: "User not found" });
+  const userLevel = await getUserLevel(userId);
   const { image, ...rest } = user;
-  const result = { ...rest, imageUrl: image ? `/uploads/${image.filename}` : null };
+  const result = { ...rest, imageUrl: image?.url, level: userLevel };
 
   return res.status(200).json({ success: true, data: result });
 };
 
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req.user as Express.User;
+    const { id: userId } = req.user as Express.User;
     const raw = {
       firstname: req.body.firstname,
       lastname: req.body.lastname,

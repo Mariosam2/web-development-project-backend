@@ -78,8 +78,9 @@ model ExerciseWorkout {
 
 model Image {
   id        String   @id @default(uuid())
-  filename  String
+  filename  String?
   user      User?
   workout   Workout?
+  url       String   @db.LongText
   createdAt DateTime @default(now())
 }

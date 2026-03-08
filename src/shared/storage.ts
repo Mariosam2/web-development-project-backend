@@ -55,15 +55,15 @@ export const handleUpload = (field: string) => {
 
 export const createImage = async (file?: Express.Multer.File) => {
   let imageId: string | undefined;
-  if (file) {
-    const newImage = {
-      filename: file.filename,
-    };
-    const workoutImage = await prisma.image.create({
-      data: newImage,
-    });
-    imageId = workoutImage.id;
-  }
+  const newImage = {
+    filename: file?.filename,
+    url: getEnvOrThrow("BASE_URL") + `/uploads/${file?.filename}`,
+  };
+
+  const workoutImage = await prisma.image.create({
+    data: newImage,
+  });
+  imageId = workoutImage.id;
   return imageId;
 };
 

@@ -1,5 +1,5 @@
 import { prisma } from "@src/../lib/prisma";
-import { saveExercisesAndOrderRelations } from "@src/shared/helpers";
+import { calculateEstimatedDuration, saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { IImageOptions } from "@src/shared/interfaces/IImageOptions";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
@@ -7,9 +7,10 @@ import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
 import { createImage, deleteOldImage, handleImage } from "@src/shared/storage";
 import { NextFunction, Request, Response } from "express";
+const MAX_SELECTABLE_EXERCISES = 20;
 
 export const workouts = async (req: Request, res: Response) => {
-  const { userId } = req.user as Express.User;
+  const { id: userId } = req.user as Express.User;
   const queryParams = req.query;
 
   const validatedParams = workoutQuerySchema.safeParse(queryParams);
@@ -37,7 +38,7 @@ export const workouts = async (req: Request, res: Response) => {
     },
     omit: { userId: true },
     include: {
-      image: { select: { filename: true } },
+      image: { select: { filename: true, url: true } },
       _count: {
         select: { exerciseWorkouts: true },
       },
@@ -53,21 +54,21 @@ export const workouts = async (req: Request, res: Response) => {
 
   const result = workouts.map(({ image, _count, exerciseWorkouts, ...workout }) => ({
     ...workout,
-    imageUrl: image ? `/uploads/${image.filename}` : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
+    imageUrl: image ? image.url : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
     exerciseCount: _count.exerciseWorkouts,
   }));
 
   return res.status(200).json({ success: true, data: result });
 };
 export const singleWorkout = async (req: Request, res: Response) => {
-  const { userId } = req.user as Express.User;
+  const { id: userId } = req.user as Express.User;
   const { workoutId } = req.params;
 
   const workout = await prisma.workout.findFirst({
     where: { userId, id: workoutId as string },
     omit: { userId: true },
     include: {
-      image: { select: { filename: true } },
+      image: { select: { filename: true, url: true } },
       _count: {
         select: { exerciseWorkouts: true },
       },
@@ -86,7 +87,7 @@ export const singleWorkout = async (req: Request, res: Response) => {
   const { image, _count, exerciseWorkouts, ...rest } = workout;
   const result = {
     ...rest,
-    imageUrl: image ? `/uploads/${image.filename}` : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
+    imageUrl: image ? image.url : (exerciseWorkouts[0]?.exercise.imageUrl ?? null),
     exerciseCount: _count.exerciseWorkouts,
   };
 
@@ -114,7 +115,6 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
   try {
     const raw = {
       title: req.body.title,
-      estimatedDuration: Number(req.body.estimatedDuration),
       exercises: JSON.parse(req.body.exercises),
     };
 
@@ -129,13 +129,14 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
       });
     }
     const imageId = await createImage(req.file);
-    const { userId } = req.user as Express.User;
+    const { id: userId } = req.user as Express.User;
     const { exercises, ...workout } = result.data;
 
     const newWorkout = await prisma.workout.create({
       data: {
         ...workout,
         userId,
+        estimatedDuration: calculateEstimatedDuration(exercises),
         imageId,
       },
     });
@@ -152,7 +153,6 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
     const { workoutId } = req.params;
     const raw = {
       title: req.body.title,
-      estimatedDuration: Number(req.body.estimatedDuration),
       exercises: JSON.parse(req.body.exercises),
       imageId: req.body.imageId,
       imageRemoved: req.body.imageRemoved,
@@ -174,13 +174,14 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
     const imageOptions: IImageOptions = {
       req,
       ...(imageRemoved && { imageRemoved }),
-      modelId: workout.id,
+      modelId: workoutId as string,
       modelName: "workout",
     };
+
     const imageId = await handleImage(workout.imageId, imageOptions);
     const newWorkout = await prisma.workout.update({
       where: { id: workoutId as string },
-      data: { ...workout, imageId },
+      data: { ...workout, estimatedDuration: calculateEstimatedDuration(exercises), imageId },
     });
     await saveExercisesAndOrderRelations(exercises, newWorkout.id);
 
@@ -227,6 +228,10 @@ export const importExercises = async (req: Request, res: Response, next: NextFun
 
     const { workoutId, exercises } = result.data;
     const newExercises = await saveExercisesAndOrderRelations(exercises, workoutId);
+    await prisma.workout.update({
+      where: { id: workoutId },
+      data: { estimatedDuration: calculateEstimatedDuration(exercises) },
+    });
 
     return res
       .status(200)
@@ -249,7 +254,7 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
       });
     }
 
-    const { exercisesIds, workoutId, updatedDuration } = result.data;
+    const { exercisesIds, workoutId } = result.data;
     const totalExercises = await prisma.exerciseWorkout.count({
       where: { workoutId },
     });
@@ -258,15 +263,33 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
       return res.status(400).json({ success: false, message: "A workout must have at least one exercise" });
     }
 
-    await prisma.workout.update({
-      where: { id: workoutId as string },
-      data: { estimatedDuration: updatedDuration },
-    });
     await prisma.exerciseWorkout.deleteMany({
       where: {
         workoutId,
         exerciseId: { in: exercisesIds },
       },
+    });
+
+    const remainingExercises = await prisma.exerciseWorkout.findMany({
+      where: { workoutId },
+      include: { exercise: true },
+    });
+
+    const exercises = remainingExercises.map((e) => ({
+      exerciseId: e.exerciseId,
+      reps: e.reps,
+      sets: e.sets,
+      name: e.exercise.name,
+      description: e.exercise.description ?? undefined,
+      bodyPart: e.exercise.bodyPart ?? undefined,
+      targetMuscle: e.exercise.targetMuscle ?? undefined,
+      imageUrl: e.exercise.imageUrl ?? undefined,
+      videoUrl: e.exercise.videoUrl ?? undefined,
+    }));
+
+    await prisma.workout.update({
+      where: { id: workoutId as string },
+      data: { estimatedDuration: calculateEstimatedDuration(exercises) },
     });
 
     return res.status(200).json({ success: true, idOut: exercisesIds, message: "exercises imported successfully!" });
@@ -277,7 +300,7 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
 
 export const completeWorkout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req.user as Express.User;
+    const { id: userId } = req.user as Express.User;
     const { workoutId } = req.params;
 
     const completedAt = new Date();

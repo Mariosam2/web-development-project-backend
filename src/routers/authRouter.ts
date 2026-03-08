@@ -1,7 +1,7 @@
 import {
   checkAuth,
   forgotPassword,
-  googleAuthCallbak,
+  googleAuthCallback,
   login,
   logout,
   refreshToken,
@@ -13,8 +13,12 @@ import { Router } from "express";
 import passport from "passport";
 
 const authRouter = Router();
-
-authRouter.get("/google/callback", passport.authenticate("google", { session: false }), googleAuthCallbak);
+authRouter.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+  googleAuthCallback,
+);
 authRouter.post("/login", login);
 authRouter.post("/register", register);
 authRouter.post("/register", register);

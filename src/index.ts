@@ -7,6 +7,8 @@ import { getEnvOrThrow } from "./shared/helpers";
 import { errorHandler } from "./middlewares/errorHandler";
 import cookieParser from "cookie-parser";
 import "./shared/cron-job";
+import passport from "passport";
+import "./config/passport";
 
 const app = express();
 const port = "3000";
@@ -16,6 +18,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(passport.initialize());
 app.use(cookieParser());
 app.use(express.json());
 app.use("/uploads", express.static(getEnvOrThrow("UPLOADS_DIR")));

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "@src/../lib/prisma";
 export const completedWorkouts = async (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.user as Express.User;
+  const { id: userId } = req.user as Express.User;
   const completedWorkouts = await prisma.completedWorkout.groupBy({
     by: ["completedAt"],
     where: { userId },
@@ -17,7 +17,7 @@ export const completedWorkouts = async (req: Request, res: Response, next: NextF
   return res.status(200).json({ success: true, data });
 };
 export const statistics = async (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.user as Express.User;
+  const { id: userId } = req.user as Express.User;
 
   const workouts = await prisma.workout.findMany({
     where: {

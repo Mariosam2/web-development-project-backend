@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@src/../lib/prisma";
 import { ExerciseSchema } from "./schemas/ExerciseSchema";
 import * as z from "zod";
+import { UserLevel } from "./enums/UserLevel.enum";
+
 export const fetchTyped = async <T>(url: string, method: string = "GET"): Promise<IApiResponse<T> | string> => {
   const res = await fetch(url, {
     method,
@@ -29,7 +31,7 @@ export const getEnvOrThrow = (variableName: string): string => {
 
 export const generateTokensAndCookie = (user: User, res: Response) => {
   const accessToken = jwt.sign(
-    { userId: user.id, username: user.username, email: user.email },
+    { id: user.id, username: user.username, email: user.email },
     getEnvOrThrow("JWT_SECRET"),
     {
       expiresIn: "15m",
@@ -46,6 +48,19 @@ export const generateTokensAndCookie = (user: User, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   return accessToken;
+};
+
+export const calculateEstimatedDuration = (exercises: z.infer<typeof ExerciseSchema>[]): number => {
+  return Math.floor(
+    exercises.reduce((total, exercise) => {
+      const sets = exercise.sets ?? 1;
+      const reps = exercise.reps ?? 1;
+      const secondsPerRep = 3;
+      const restBetweenSets = 60;
+      const timePerSet = reps * secondsPerRep + restBetweenSets;
+      return total + sets * timePerSet;
+    }, 0) / 60,
+  );
 };
 
 export const messageFromPrismaError = (errorCode: string, model: string) => {
@@ -71,30 +86,33 @@ export const saveExercisesAndOrderRelations = async (
   exercises: z.infer<typeof ExerciseSchema>[],
   workoutId: string,
 ) => {
-  const newExercises = await Promise.all(
-    exercises.map((e) => {
-      const { exerciseId, reps, sets, ...data } = e;
-      return prisma.exercise.upsert({
-        where: { exerciseId },
-        create: { exerciseId, ...data },
-        update: {},
-      });
-    }),
-  );
+  return await prisma.$transaction(async (tx) => {
+    const newExercises = await Promise.all(
+      exercises.map((e) => {
+        const { exerciseId, reps, sets, ...data } = e;
+        return tx.exercise.upsert({
+          where: { exerciseId },
+          create: { exerciseId, ...data },
+          update: {},
+        });
+      }),
+    );
 
-  await prisma.exerciseWorkout.deleteMany({ where: { workoutId } });
-  //console.log(exercises);
-  await prisma.exerciseWorkout.createMany({
-    data: newExercises.map((e: Exercise, index) => ({
-      workoutId,
-      exerciseId: e.id,
-      exerciseOrder: index + 1,
-      reps: exercises[index].reps,
-      sets: exercises[index].sets,
-    })),
+    await tx.exerciseWorkout.deleteMany({ where: { workoutId } });
+
+    await tx.exerciseWorkout.createMany({
+      data: newExercises.map((e, index) => ({
+        workoutId,
+        exerciseId: e.id,
+        exerciseOrder: index + 1,
+        reps: exercises[index].reps,
+        sets: exercises[index].sets,
+      })),
+      skipDuplicates: true,
+    });
+
+    return newExercises;
   });
-
-  return newExercises;
 };
 
 export const createQueryParams = (req: Request) => {
@@ -216,3 +234,10 @@ export const passwordResetTemplate = (resetUrl: string) => `
 </body>
 </html>
 `;
+
+export const getUserLevel = async (userId: string) => {
+  const completedWorkout = await prisma.completedWorkout.count({ where: { userId } });
+  if (completedWorkout < 5) return UserLevel.BEGINNER;
+  if (completedWorkout < 10) return UserLevel.INTERMEDIATE;
+  return UserLevel.ADVANCED;
+};

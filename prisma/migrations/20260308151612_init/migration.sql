@@ -71,7 +71,8 @@ CREATE TABLE `ExerciseWorkout` (
 -- CreateTable
 CREATE TABLE `Image` (
     `id` VARCHAR(191) NOT NULL,
-    `filename` VARCHAR(191) NOT NULL,
+    `filename` VARCHAR(191) NULL,
+    `url` LONGTEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)

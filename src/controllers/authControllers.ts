@@ -43,6 +43,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const checkAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.cookies;
+
     if (!refreshToken) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -119,9 +120,9 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req.user as Express.User;
+    const { id } = req.user as Express.User;
     await prisma.user.update({
-      where: { id: userId },
+      where: { id },
       data: { tokenVersion: { increment: 1 } },
     });
 
@@ -131,32 +132,25 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const googleAuthCallbak = (req: Request, res: Response) => {
-  const result = UserSchema.safeParse(req.user);
-  if (!result.success) {
-    return res.status(400).json({
-      success: false,
-      validationErrors: result.error.issues.map((e) => ({
-        field: e.path.join("."),
-        message: e.message,
-      })),
-    });
+export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = UserSchema.safeParse(req.user);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
+    }
+    const authUser = await prisma.user.findUniqueOrThrow({ where: { googleId: result.data.googleId } });
+    const accessToken = generateTokensAndCookie(authUser, res);
+    res.redirect(`${getEnvOrThrow("FRONTEND_URL")}/auth/callback?token=${accessToken}`);
+  } catch (error) {
+    next(error);
   }
-
-  const user = result.data;
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, getEnvOrThrow("JWT_SECRET"), { expiresIn: "15m" });
-  const refreshToken = jwt.sign({ id: user.id, tokenVersion: user.tokenVersion }, getEnvOrThrow("JWT_REFRESH_SECRET"), {
-    expiresIn: "7d",
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-
-  res.redirect(`${process.env.FRONTEND_URL}/auth/callback?access=${accessToken}`);
 };
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
