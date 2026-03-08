@@ -235,6 +235,183 @@ export const passwordResetTemplate = (resetUrl: string) => `
 </html>
 `;
 
+export const contactThankYouTemplate = (message: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>We got your message</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f6f6;font-family:'Poppins',system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f6f6;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="background-color:#1e1e1e;border-radius:24px;overflow:hidden;">
+
+          
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:40px 40px 8px;">
+              <div style="background-color:#f3ff96;border-radius:16px;padding:12px;display:inline-block;">
+                <img src="${logoUrl}" width="60" height="60" alt="ManMot" style="display:block;" />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Brand name -->
+          <tr>
+            <td align="center" style="padding:0 40px 32px;">
+              <span style="font-size:20px;font-weight:700;color:#f3ff96;letter-spacing:2px;">MANMOT</span>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding:0 40px 12px;">
+              <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;line-height:1.3;">
+                We got your message 👋
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Subtitle -->
+          <tr>
+            <td align="center" style="padding:0 48px 36px;">
+              <p style="margin:0;font-size:14px;color:#b2b2b2;line-height:1.7;text-align:center;">
+                Thanks for reaching out! We'll get back to you as soon as possible.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background-color:#2e2e2e;"></div>
+            </td>
+          </tr>
+
+          <!-- Message recap -->
+          <tr>
+            <td style="padding:32px 40px 8px;">
+              <p style="margin:0;font-size:12px;color:#b2b2b2;text-transform:uppercase;letter-spacing:1px;">Your message</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 40px 32px;">
+              <div style="background-color:#2a2a2a;border-radius:12px;padding:16px 20px;">
+                <p style="margin:0;font-size:14px;color:#d4d4d4;line-height:1.7;">${message}</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background-color:#2e2e2e;"></div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:24px 40px 36px;">
+              <p style="margin:0;font-size:11px;color:#b2b2b2;text-align:center;">
+                This is an automated email — please do not reply directly to this message.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+export const contactNotificationTemplate = (email: string, message: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New contact message</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f6f6;font-family:'Poppins',system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f6f6;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="background-color:#1e1e1e;border-radius:24px;overflow:hidden;">
+
+       
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:40px 40px 8px;">
+              <div style="background-color:#f3ff96;border-radius:16px;padding:12px;display:inline-block;">
+                <img src="${logoUrl}" width="60" height="60" alt="ManMot" style="display:block;" />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Brand name -->
+          <tr>
+            <td align="center" style="padding:0 40px 32px;">
+              <span style="font-size:20px;font-weight:700;color:#f3ff96;letter-spacing:2px;">MANMOT</span>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding:0 40px 12px;">
+              <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;line-height:1.3;">
+                New contact message 📬
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <div style="height:1px;background-color:#2e2e2e;"></div>
+            </td>
+          </tr>
+
+          <!-- From -->
+          <tr>
+            <td style="padding:0 40px 8px;">
+              <p style="margin:0;font-size:12px;color:#b2b2b2;text-transform:uppercase;letter-spacing:1px;">From</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 40px 24px;">
+              <div style="background-color:#2a2a2a;border-radius:12px;padding:14px 20px;">
+                <a href="mailto:${email}" style="font-size:14px;color:#f3ff96;text-decoration:none;">${email}</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Message -->
+          <tr>
+            <td style="padding:0 40px 8px;">
+              <p style="margin:0;font-size:12px;color:#b2b2b2;text-transform:uppercase;letter-spacing:1px;">Message</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 40px 40px;">
+              <div style="background-color:#2a2a2a;border-radius:12px;padding:16px 20px;">
+                <p style="margin:0;font-size:14px;color:#d4d4d4;line-height:1.7;">${message}</p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
 export const getUserLevel = async (userId: string) => {
   const completedWorkout = await prisma.completedWorkout.count({ where: { userId } });
   if (completedWorkout < 5) return UserLevel.BEGINNER;

@@ -84,3 +84,10 @@ model Image {
   url       String   @db.LongText
   createdAt DateTime @default(now())
 }
+
+model Contacts {
+  id          String   @id @default(uuid())
+  senderEmail String   @unique
+  message     String   @db.LongText
+  contactedAt DateTime @default(now())
+}

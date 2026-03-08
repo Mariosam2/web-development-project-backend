@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import "./shared/cron-job";
 import passport from "passport";
 import "./config/passport";
+import contactRouter from "./routers/contactRouter";
 
 const app = express();
 const port = "3000";
@@ -23,6 +24,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use("/uploads", express.static(getEnvOrThrow("UPLOADS_DIR")));
 app.use("/auth", authRouter);
+app.use("/contact", contactRouter);
 app.use("/api/v1", authMiddleware, apiRouter);
 app.use(errorHandler);
 
