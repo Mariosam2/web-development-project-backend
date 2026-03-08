@@ -18,7 +18,6 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, getUploadDir()),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    console.log(file);
     cb(null, `${randomUUID()}${ext}`);
   },
 });
@@ -33,7 +32,6 @@ const upload = multer({
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      console.log(file);
       cb(new Error("Only JPEG, PNG and WebP are allowed"));
     }
   },

@@ -8,6 +8,7 @@ CREATE TABLE `User` (
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NULL,
     `tokenVersion` INTEGER NOT NULL DEFAULT 1,
+    `resetPasswordToken` VARCHAR(191) NULL,
     `imageId` VARCHAR(191) NULL,
 
     UNIQUE INDEX `User_googleId_key`(`googleId`),

@@ -4,9 +4,10 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "@src/../lib/prisma";
 import bcrypt from "bcrypt";
-import { generateTokensAndCookie, getEnvOrThrow } from "@src/shared/helpers";
+import { generateTokensAndCookie, getEnvOrThrow, passwordResetTemplate } from "@src/shared/helpers";
 import { RegisterSchema } from "@src/shared/schemas/RegisterSchema";
 import { ITokenPayload } from "@src/shared/interfaces/ITokenPayload";
+import { transporter } from "@src/shared/transporter";
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -156,4 +157,54 @@ export const googleAuthCallbak = (req: Request, res: Response) => {
   });
 
   res.redirect(`${process.env.FRONTEND_URL}/auth/callback?access=${accessToken}`);
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const resetPasswordToken = jwt.sign({ id: user.id }, getEnvOrThrow("RESET_PASSWORD_TOKEN_SECRET"), {
+      expiresIn: "15min",
+    });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
+    await transporter.sendMail({
+      from: '"ManMot" <noreply.manmot@gmail.com>',
+      to: user.email,
+      subject: "Reset your ManMot password",
+      html: passwordResetTemplate(resetUrl),
+    });
+
+    await prisma.user.update({
+      data: { resetPasswordToken },
+      where: { id: user.id },
+    });
+
+    return res.status(200).json({ success: true, message: "Email sent successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body;
+    const decoded = jwt.verify(token, getEnvOrThrow("RESET_PASSWORD_TOKEN_SECRET")) as ITokenPayload;
+    if (!decoded) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      data: { password: hashedPassword, resetPasswordToken: null },
+      where: { id: decoded.id },
+    });
+
+    return res.json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ success: false, message: "Reset link expired" });
+    }
+    next(error);
+  }
 };
