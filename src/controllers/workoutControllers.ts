@@ -7,7 +7,6 @@ import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
 import { WorkoutSchema } from "@src/shared/schemas/WorkoutSchema";
 import { createImage, deleteOldImage, handleImage } from "@src/shared/storage";
 import { NextFunction, Request, Response } from "express";
-const MAX_SELECTABLE_EXERCISES = 20;
 
 export const workouts = async (req: Request, res: Response) => {
   const { id: userId } = req.user as Express.User;
@@ -51,6 +50,8 @@ export const workouts = async (req: Request, res: Response) => {
       },
     },
   });
+
+  //console.log(workouts);
 
   const result = workouts.map(({ image, _count, exerciseWorkouts, ...workout }) => ({
     ...workout,
@@ -128,7 +129,12 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
         })),
       });
     }
-    const imageId = await createImage(req.file);
+
+    let imageId: string | null = null;
+    if (req.file) {
+      imageId = await createImage(req.file);
+    }
+
     const { id: userId } = req.user as Express.User;
     const { exercises, ...workout } = result.data;
 
@@ -275,21 +281,14 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
       include: { exercise: true },
     });
 
-    const exercises = remainingExercises.map((e) => ({
-      exerciseId: e.exerciseId,
+    const exercisesRepsAndSets = remainingExercises.map((e) => ({
       reps: e.reps,
       sets: e.sets,
-      name: e.exercise.name,
-      description: e.exercise.description ?? undefined,
-      bodyPart: e.exercise.bodyPart ?? undefined,
-      targetMuscle: e.exercise.targetMuscle ?? undefined,
-      imageUrl: e.exercise.imageUrl ?? undefined,
-      videoUrl: e.exercise.videoUrl ?? undefined,
     }));
 
     await prisma.workout.update({
       where: { id: workoutId as string },
-      data: { estimatedDuration: calculateEstimatedDuration(exercises) },
+      data: { estimatedDuration: calculateEstimatedDuration(exercisesRepsAndSets) },
     });
 
     return res.status(200).json({ success: true, idOut: exercisesIds, message: "exercises imported successfully!" });

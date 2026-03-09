@@ -21,13 +21,15 @@ CREATE TABLE `User` (
 -- CreateTable
 CREATE TABLE `Exercise` (
     `id` VARCHAR(191) NOT NULL,
-    `exerciseId` CHAR(36) NOT NULL,
+    `exerciseId` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-    `description` LONGTEXT NULL,
-    `bodyPart` VARCHAR(191) NULL,
-    `targetMuscle` VARCHAR(191) NULL,
     `imageUrl` VARCHAR(191) NULL,
-    `videoUrl` VARCHAR(191) NULL,
+    `bodyParts` JSON NOT NULL,
+    `equipments` JSON NOT NULL,
+    `exerciseType` VARCHAR(191) NOT NULL,
+    `targetMuscles` JSON NOT NULL,
+    `secondaryMuscles` JSON NOT NULL,
+    `keywords` JSON NOT NULL,
 
     UNIQUE INDEX `Exercise_exerciseId_key`(`exerciseId`),
     PRIMARY KEY (`id`)
@@ -75,6 +77,17 @@ CREATE TABLE `Image` (
     `url` LONGTEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Contacts` (
+    `id` VARCHAR(191) NOT NULL,
+    `senderEmail` VARCHAR(191) NOT NULL,
+    `message` LONGTEXT NOT NULL,
+    `contactedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `Contacts_senderEmail_key`(`senderEmail`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

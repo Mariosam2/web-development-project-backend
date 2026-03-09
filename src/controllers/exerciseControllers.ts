@@ -76,7 +76,13 @@ export const targetMuscles = async (req: Request, res: Response) => {
 
 export const exerciseTypes = async (req: Request, res: Response) => {
   try {
-    const types = await fetchTyped<IExerciseType[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercisetypes`);
+    const result = await fetchTyped<IExerciseType[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/exercisetypes`);
+
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+    const { data: types } = result;
+
     return res.status(200).json({ success: true, data: types });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });

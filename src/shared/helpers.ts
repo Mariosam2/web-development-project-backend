@@ -50,7 +50,7 @@ export const generateTokensAndCookie = (user: User, res: Response) => {
   return accessToken;
 };
 
-export const calculateEstimatedDuration = (exercises: z.infer<typeof ExerciseSchema>[]): number => {
+export const calculateEstimatedDuration = (exercises: { reps?: number; sets?: number }[]): number => {
   return Math.floor(
     exercises.reduce((total, exercise) => {
       const sets = exercise.sets ?? 1;
@@ -89,10 +89,10 @@ export const saveExercisesAndOrderRelations = async (
   return await prisma.$transaction(async (tx) => {
     const newExercises = await Promise.all(
       exercises.map((e) => {
-        const { exerciseId, reps, sets, ...data } = e;
+        const { reps, sets, ...data } = e;
         return tx.exercise.upsert({
-          where: { exerciseId },
-          create: { exerciseId, ...data },
+          where: { exerciseId: data.exerciseId },
+          create: data,
           update: {},
         });
       }),
@@ -105,8 +105,8 @@ export const saveExercisesAndOrderRelations = async (
         workoutId,
         exerciseId: e.id,
         exerciseOrder: index + 1,
-        reps: exercises[index].reps,
-        sets: exercises[index].sets,
+        reps: exercises[index].reps ?? 1,
+        sets: exercises[index].sets ?? 1,
       })),
       skipDuplicates: true,
     });
@@ -124,8 +124,8 @@ export const createQueryParams = (req: Request) => {
   });
   return queryParams;
 };
-const logoUrl = "https://res.cloudinary.com/dy6mvmmiy/image/upload/v1772933246/logo-icon_jj2ltv.png";
 
+const logoUrl = "https://res.cloudinary.com/dy6mvmmiy/image/upload/v1772933246/logo-icon_jj2ltv.png";
 export const passwordResetTemplate = (resetUrl: string) => `
 <!DOCTYPE html>
 <html lang="en">

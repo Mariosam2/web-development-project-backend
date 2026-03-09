@@ -31,13 +31,15 @@ model User {
 
 model Exercise {
   id               String            @id @default(uuid())
-  exerciseId       String            @unique @db.Char(36)
+  exerciseId       String            @unique
   name             String
-  description      String?           @db.LongText
-  bodyPart         String?
-  targetMuscle     String?
   imageUrl         String?
-  videoUrl         String?
+  bodyParts        Json
+  equipments       Json
+  exerciseType     String
+  targetMuscles    Json
+  secondaryMuscles Json
+  keywords         Json
   exerciseWorkouts ExerciseWorkout[]
 }
 
