@@ -6,6 +6,7 @@ import { IBodyPart } from "@src/shared/interfaces/ExerciseDb/IBodyPart";
 import { IExerciseType } from "@src/shared/interfaces/ExerciseDb/IExerciseType";
 import { ITargetMuscle } from "@src/shared/interfaces/ExerciseDb/ITargetMuscle";
 import { IExerciseDetail } from "@src/shared/interfaces/ExerciseDb/IExerciseDetail";
+import { IEquipment } from "@src/shared/interfaces/ExerciseDb/IEquipment";
 
 export const exercises = async (req: Request, res: Response) => {
   try {
@@ -84,6 +85,21 @@ export const exerciseTypes = async (req: Request, res: Response) => {
     const { data: types } = result;
 
     return res.status(200).json({ success: true, data: types });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+export const equipments = async (req: Request, res: Response) => {
+  try {
+    const result = await fetchTyped<IEquipment[]>(getEnvOrThrow("EXERCISEDB_API_BASE_URL") + `/equipments`);
+
+    if (typeof result === "string") {
+      return res.status(500).json({ success: false, message: result });
+    }
+    const { data: equipments } = result;
+
+    return res.status(200).json({ success: true, data: equipments });
   } catch (error) {
     return res.status(500).json({ success: false, message: (error as Error).message });
   }

@@ -1,6 +1,8 @@
 import { prisma } from "@src/../lib/prisma";
+import { generateEmbedding, generateWorkoutFromAgent, getRelevantExercises } from "@src/shared/agent";
 import { calculateEstimatedDuration, saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { IImageOptions } from "@src/shared/interfaces/IImageOptions";
+import { GenerateWorkoutSchema } from "@src/shared/schemas/GenerateWorkoutSchema";
 import { ImportExercisesSchema } from "@src/shared/schemas/ImportExercisesSchema";
 import { RemoveExercisesSchema } from "@src/shared/schemas/RemoveExercisesSchema";
 import { workoutQuerySchema } from "@src/shared/schemas/WorkoutQuery";
@@ -313,6 +315,38 @@ export const completeWorkout = async (req: Request, res: Response, next: NextFun
     return res.status(200).json({ success: true, idOut: workoutId, message: "Workout completed successfully!" });
   } catch (error) {
     console.log(error);
+    next(error);
+  }
+};
+
+export const generateWorkout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: userId } = req.user as Express.User;
+
+    const result = GenerateWorkoutSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        validationErrors: result.error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
+    }
+
+    const workoutInput = result.data;
+    const workout = await generateWorkoutFromAgent(workoutInput);
+
+    const { exercises, ...rest } = workout;
+
+    const newWorkout = await prisma.workout.create({
+      data: { ...rest, userId },
+    });
+
+    await saveExercisesAndOrderRelations(exercises, newWorkout.id);
+
+    return res.status(200).json({ success: true, idOut: newWorkout.id, message: "Workout generated successfully!" });
+  } catch (error) {
     next(error);
   }
 };
