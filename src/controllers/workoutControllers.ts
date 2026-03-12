@@ -335,7 +335,11 @@ export const generateWorkout = async (req: Request, res: Response, next: NextFun
     }
 
     const workoutInput = result.data;
+    //console.log(workoutInput);
+
     const workout = await generateWorkoutFromAgent(workoutInput);
+
+    //console.log(workout);
 
     const { exercises, ...rest } = workout;
 

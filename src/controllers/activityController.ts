@@ -43,6 +43,7 @@ export const statistics = async (req: Request, res: Response, next: NextFunction
   });
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const streakDate = new Date(today);
   let streak = 0;
   while (dateTimesWithCompletedWorkout.includes(streakDate.getTime())) {

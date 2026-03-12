@@ -93,7 +93,7 @@ export const saveExercisesAndOrderRelations = async (
         return tx.exercise.upsert({
           where: { exerciseId: data.exerciseId },
           create: data,
-          update: {},
+          update: data,
         });
       }),
     );

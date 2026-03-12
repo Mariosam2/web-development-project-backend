@@ -28,12 +28,14 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
 
 export const getRelevantExercises = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const embedding = await generateEmbedding(workoutInput);
-
+  //console.log(embedding);
   const { data, error } = await supabase.rpc("match_exercises", {
     query_embedding: embedding,
     match_count: 20,
-    filter_equipment: workoutInput.equipments.length > 0 ? workoutInput.equipments : null,
+    filter_equipments: workoutInput.equipments.length > 0 ? workoutInput.equipments : null,
   });
+
+  //console.log(data);
 
   if (error) throw error;
 
@@ -42,8 +44,9 @@ export const getRelevantExercises = async (workoutInput: z.infer<typeof Generate
 
 export const generateWorkoutFromAgent = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const exercises = await getRelevantExercises(workoutInput);
+  //console.log(exercises);
   const { output } = await generateText({
-    model: anthropic("claude-sonnet-4.5"),
+    model: anthropic("claude-sonnet-4-5-20250929"),
     output: Output.object({
       schema: AIWorkoutSchema,
     }),
@@ -80,5 +83,16 @@ export const generateWorkoutFromAgent = async (workoutInput: z.infer<typeof Gene
   `,
   });
 
-  return output;
+  const workoutWithImages = {
+    ...output,
+    exercises: output.exercises.map((ex) => {
+      const match = exercises.find((e) => e.exercise_id === ex.exerciseId);
+      return {
+        ...ex,
+        imageUrl: match?.image_url ?? undefined,
+      };
+    }),
+  };
+
+  return workoutWithImages;
 };

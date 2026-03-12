@@ -3,6 +3,7 @@ import {
   completeWorkout,
   deleteWorkout,
   exercises,
+  generateWorkout,
   importExercises,
   removeExercises,
   singleWorkout,
@@ -16,6 +17,7 @@ const workoutRouter = Router();
 
 workoutRouter.get("/", workouts);
 workoutRouter.post("/add-workout", handleUpload("image"), addWorkout);
+workoutRouter.post("/generate", generateWorkout);
 workoutRouter.post("/remove-exercises", removeExercises);
 workoutRouter.post("/import-exercises", importExercises);
 workoutRouter.patch("/complete-workout/:workoutId", completeWorkout);
