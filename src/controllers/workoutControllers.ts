@@ -1,5 +1,5 @@
 import { prisma } from "@src/../lib/prisma";
-import { generateEmbedding, generateWorkoutFromAgent, getRelevantExercises } from "@src/shared/agent";
+import { generateWorkoutFromAgent } from "@src/shared/agent";
 import { calculateEstimatedDuration, saveExercisesAndOrderRelations } from "@src/shared/helpers";
 import { IImageOptions } from "@src/shared/interfaces/IImageOptions";
 import { GenerateWorkoutSchema } from "@src/shared/schemas/GenerateWorkoutSchema";
@@ -51,6 +51,7 @@ export const workouts = async (req: Request, res: Response) => {
         },
       },
     },
+    orderBy: { createdAt: "desc" },
   });
 
   //console.log(workouts);
