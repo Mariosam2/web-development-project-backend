@@ -5,8 +5,12 @@
     "target": "ES2023",
     "strict": true,
     "esModuleInterop": true,
-     "paths": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
       "@src/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
