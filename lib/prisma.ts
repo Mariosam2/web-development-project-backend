@@ -8,6 +8,8 @@ const adapter = new PrismaMariaDb({
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
   connectionLimit: 5,
+  port: Number(process.env.DATABASE_PORT),
+  ssl: true,
 });
 const prisma = new PrismaClient({ adapter });
 
