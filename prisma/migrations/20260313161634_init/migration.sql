@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE `User` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` CHAR(36) NOT NULL,
     `googleId` VARCHAR(191) NULL,
     `firstname` VARCHAR(191) NULL,
     `lastname` VARCHAR(191) NULL,
@@ -20,7 +20,7 @@ CREATE TABLE `User` (
 
 -- CreateTable
 CREATE TABLE `Exercise` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` CHAR(36) NOT NULL,
     `exerciseId` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `imageUrl` VARCHAR(191) NULL,
@@ -37,7 +37,7 @@ CREATE TABLE `Exercise` (
 
 -- CreateTable
 CREATE TABLE `Workout` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` CHAR(36) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
     `estimatedDuration` INTEGER NULL,
     `completed` BOOLEAN NOT NULL DEFAULT false,
@@ -56,7 +56,7 @@ CREATE TABLE `CompletedWorkout` (
     `userId` CHAR(36) NOT NULL,
     `completedAt` DATE NOT NULL,
 
-    PRIMARY KEY (`workoutId`, `userId`)
+    PRIMARY KEY (`workoutId`, `userId`, `completedAt`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -72,7 +72,7 @@ CREATE TABLE `ExerciseWorkout` (
 
 -- CreateTable
 CREATE TABLE `Image` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` CHAR(36) NOT NULL,
     `filename` VARCHAR(191) NULL,
     `url` LONGTEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -82,7 +82,7 @@ CREATE TABLE `Image` (
 
 -- CreateTable
 CREATE TABLE `Contacts` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` CHAR(36) NOT NULL,
     `senderEmail` VARCHAR(191) NOT NULL,
     `message` LONGTEXT NOT NULL,
     `contactedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

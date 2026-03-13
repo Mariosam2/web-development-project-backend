@@ -3,6 +3,6 @@
 /generated/prisma
 
 .env
-
+.env.prod
 
 isrgrootx1.pem
