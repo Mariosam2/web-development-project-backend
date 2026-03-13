@@ -23,7 +23,7 @@ model User {
   password           String?
   tokenVersion       Int                @default(1)
   resetPasswordToken String?
-  imageId            String?            @unique
+  imageId            String?            @unique @db.Char(36)
   image              Image?             @relation(fields: [imageId], references: [id])
   workouts           Workout[]
   completedWorkouts  CompletedWorkout[]
@@ -51,7 +51,7 @@ model Workout {
   completed         Boolean           @default(false)
   createdAt         DateTime          @default(now())
   completedAt       DateTime?
-  imageId           String?           @unique
+  imageId           String?           @unique @db.Char(36)
   image             Image?            @relation(fields: [imageId], references: [id])
   userId            String
   user              User              @relation(fields: [userId], references: [id])

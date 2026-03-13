@@ -9,7 +9,7 @@ CREATE TABLE `User` (
     `password` VARCHAR(191) NULL,
     `tokenVersion` INTEGER NOT NULL DEFAULT 1,
     `resetPasswordToken` VARCHAR(191) NULL,
-    `imageId` VARCHAR(191) NULL,
+    `imageId` CHAR(36) NULL,
 
     UNIQUE INDEX `User_googleId_key`(`googleId`),
     UNIQUE INDEX `User_username_key`(`username`),
@@ -43,7 +43,7 @@ CREATE TABLE `Workout` (
     `completed` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `completedAt` DATETIME(3) NULL,
-    `imageId` VARCHAR(191) NULL,
+    `imageId` CHAR(36) NULL,
     `userId` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `Workout_imageId_key`(`imageId`),
