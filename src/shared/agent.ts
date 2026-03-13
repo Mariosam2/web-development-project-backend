@@ -36,7 +36,7 @@ export const getRelevantExercises = async (workoutInput: z.infer<typeof Generate
     filter_equipments: workoutInput.equipments.length > 0 ? workoutInput.equipments : null,
   });
 
-  //console.log(data);
+  console.log("DATA", data);
 
   if (error) throw error;
 
