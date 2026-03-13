@@ -28,6 +28,6 @@ app.use("/contact", contactRouter);
 app.use("/api/v1", authMiddleware, apiRouter);
 app.use(errorHandler);
 
-app.listen(port, () => {
+app.listen(getEnvOrThrow("PORT"), () => {
   console.log(`Example app listening on port ${port}`);
 });
