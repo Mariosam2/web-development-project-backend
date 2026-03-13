@@ -304,7 +304,6 @@ export const completeWorkout = async (req: Request, res: Response, next: NextFun
   try {
     const { id: userId } = req.user as Express.User;
     const { workoutId } = req.params;
-
     const completedAt = new Date();
 
     await prisma.workout.update({
