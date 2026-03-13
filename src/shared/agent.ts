@@ -16,6 +16,7 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
     `Goal: ${workoutInput.goal}`,
     `Target Muscles: ${workoutInput.targetMuscles.join(", ")}`,
     `Equipments: ${workoutInput.equipments.join(", ")}`,
+    `Equipments: ${workoutInput.equipments.join(", ")}`,
     `Notes: ${workoutInput.notes}`,
   ].filter(Boolean);
   const response = await openai.embeddings.create({
@@ -28,15 +29,11 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
 
 export const getRelevantExercises = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const embedding = await generateEmbedding(workoutInput);
-  //console.log(embedding);
   console.log("EQUIPMENTS", workoutInput.equipments);
   const { data, error } = await supabase.rpc("match_exercises", {
     query_embedding: embedding,
     match_count: 20,
-    filter_equipments: workoutInput.equipments.length > 0 ? workoutInput.equipments : null,
   });
-
-  console.log("DATA", data);
 
   if (error) throw error;
 
@@ -45,7 +42,6 @@ export const getRelevantExercises = async (workoutInput: z.infer<typeof Generate
 
 export const generateWorkoutFromAgent = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const exercises = await getRelevantExercises(workoutInput);
-  //console.log(exercises);
   const { output } = await generateText({
     model: anthropic("claude-sonnet-4-5-20250929"),
     output: Output.object({
