@@ -44,7 +44,7 @@ CREATE TABLE `Workout` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `completedAt` DATETIME(3) NULL,
     `imageId` CHAR(36) NULL,
-    `userId` VARCHAR(191) NOT NULL,
+    `userId` CHAR(36) NOT NULL,
 
     UNIQUE INDEX `Workout_imageId_key`(`imageId`),
     PRIMARY KEY (`id`)

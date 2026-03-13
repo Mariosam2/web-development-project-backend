@@ -53,7 +53,7 @@ model Workout {
   completedAt       DateTime?
   imageId           String?           @unique @db.Char(36)
   image             Image?            @relation(fields: [imageId], references: [id])
-  userId            String
+  userId            String            @db.Char(36)
   user              User              @relation(fields: [userId], references: [id])
 }
 
