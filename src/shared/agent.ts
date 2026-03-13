@@ -29,6 +29,7 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
 export const getRelevantExercises = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const embedding = await generateEmbedding(workoutInput);
   //console.log(embedding);
+  console.log("EQUIPMENTS", workoutInput.equipments);
   const { data, error } = await supabase.rpc("match_exercises", {
     query_embedding: embedding,
     match_count: 20,
