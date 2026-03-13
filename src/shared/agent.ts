@@ -28,7 +28,7 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
 
 export const getRelevantExercises = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const embedding = await generateEmbedding(workoutInput);
-  //console.log(embedding);
+  console.log(embedding);
   const { data, error } = await supabase.rpc("match_exercises", {
     query_embedding: embedding,
     match_count: 20,
@@ -44,7 +44,7 @@ export const getRelevantExercises = async (workoutInput: z.infer<typeof Generate
 
 export const generateWorkoutFromAgent = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const exercises = await getRelevantExercises(workoutInput);
-  //console.log(exercises);
+  console.log(exercises);
   const { output } = await generateText({
     model: anthropic("claude-sonnet-4-5-20250929"),
     output: Output.object({
