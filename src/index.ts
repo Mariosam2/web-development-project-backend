@@ -29,5 +29,5 @@ app.use("/api/v1", authMiddleware, apiRouter);
 app.use(errorHandler);
 
 app.listen(getEnvOrThrow("PORT"), () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Example app listening on port ${getEnvOrThrow("PORT")}`);
 });
