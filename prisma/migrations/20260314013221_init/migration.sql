@@ -39,6 +39,7 @@ CREATE TABLE `Exercise` (
 CREATE TABLE `Workout` (
     `id` CHAR(36) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
+    `description` LONGTEXT NULL,
     `estimatedDuration` INTEGER NULL,
     `completed` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

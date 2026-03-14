@@ -2,6 +2,7 @@ import * as z from "zod";
 export const AIWorkoutSchema = z.object({
   title: z.string(),
   estimatedDuration: z.number(),
+  description: z.string(),
   exercises: z.array(
     z.object({
       exerciseId: z.string(),

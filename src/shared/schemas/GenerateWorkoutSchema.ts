@@ -6,7 +6,7 @@ export const GenerateWorkoutSchema = z.object({
   age: z.number().int().positive(),
   level: z.enum(["beginner", "intermediate", "advanced"]),
   goal: z.string().optional(),
-  targetMuscles: z.array(z.string()),
-  equipments: z.array(z.string()),
+  targetMuscles: z.array(z.string()).optional(),
+  equipments: z.array(z.string()).optional(),
   notes: z.string().optional(),
 });

@@ -46,6 +46,7 @@ model Exercise {
 model Workout {
   id                String            @id @default(uuid()) @db.Char(36)
   title             String
+  description       String?           @db.LongText
   exerciseWorkouts  ExerciseWorkout[]
   estimatedDuration Int?
   completed         Boolean           @default(false)
