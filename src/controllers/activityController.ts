@@ -18,6 +18,7 @@ export const completedWorkouts = async (req: Request, res: Response, next: NextF
 };
 export const statistics = async (req: Request, res: Response, next: NextFunction) => {
   const { id: userId } = req.user as Express.User;
+  const { today: todayRaw } = req.query;
 
   const workouts = await prisma.workout.findMany({
     where: {
@@ -42,7 +43,7 @@ export const statistics = async (req: Request, res: Response, next: NextFunction
     return d.getTime();
   });
 
-  const today = new Date();
+  const today = todayRaw ? new Date(todayRaw as string) : new Date();
   today.setHours(0, 0, 0, 0);
   const streakDate = new Date(today);
   let streak = 0;
