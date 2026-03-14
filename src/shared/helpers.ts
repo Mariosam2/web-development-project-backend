@@ -43,9 +43,9 @@ export const generateTokensAndCookie = (user: User, res: Response) => {
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    /* secure: true, */
+    secure: true,
     sameSite: "strict",
-    /*   domain: ".optidune.com", */
+    domain: ".optidune.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   return accessToken;

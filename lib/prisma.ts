@@ -9,7 +9,7 @@ const adapter = new PrismaMariaDb({
   database: process.env.DATABASE_NAME,
   connectionLimit: 5,
   port: Number(process.env.DATABASE_PORT),
-  /*   ssl: true, */
+  ssl: true,
 });
 const prisma = new PrismaClient({ adapter });
 
