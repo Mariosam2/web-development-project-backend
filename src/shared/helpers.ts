@@ -45,6 +45,7 @@ export const generateTokensAndCookie = (user: User, res: Response) => {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
+    domain: ".optidune.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   return accessToken;
