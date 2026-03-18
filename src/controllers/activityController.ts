@@ -19,17 +19,24 @@ export const completedWorkouts = async (req: Request, res: Response, next: NextF
 export const statistics = async (req: Request, res: Response, next: NextFunction) => {
   const { id: userId } = req.user as Express.User;
   const { today: todayRaw } = req.query;
+  const today = todayRaw ? new Date(todayRaw as string) : new Date();
+  today.setHours(23, 59, 59, 999);
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const workouts = await prisma.workout.findMany({
+  const recentCompleted = await prisma.completedWorkout.findMany({
     where: {
       userId,
-      completed: true,
       completedAt: {
-        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        gte: sevenDaysAgo,
+        lte: today,
       },
     },
+    include: { workout: { select: { estimatedDuration: true } } },
   });
-  const totalWorkoutsDuration = workouts.reduce((acc, curr) => acc + (curr.estimatedDuration ?? 0), 0);
+
+  const totalWorkoutsDuration = recentCompleted.reduce((acc, curr) => acc + (curr.workout?.estimatedDuration ?? 0), 0);
 
   const daysWithCompletedWorkout = await prisma.completedWorkout.findMany({
     where: { userId },
@@ -43,7 +50,6 @@ export const statistics = async (req: Request, res: Response, next: NextFunction
     return d.getTime();
   });
 
-  const today = todayRaw ? new Date(todayRaw as string) : new Date();
   today.setHours(0, 0, 0, 0);
   const streakDate = new Date(today);
   let streak = 0;
@@ -53,7 +59,7 @@ export const statistics = async (req: Request, res: Response, next: NextFunction
   }
 
   const statistics = {
-    workoutsCount: workouts.length,
+    workoutsCount: recentCompleted.length,
     totalWorkoutsDuration,
     streak,
   };

@@ -44,22 +44,24 @@ model Exercise {
 }
 
 model Workout {
-  id                String            @id @default(uuid()) @db.Char(36)
+  id                String             @id @default(uuid()) @db.Char(36)
   title             String
-  description       String?           @db.LongText
+  description       String?            @db.LongText
   exerciseWorkouts  ExerciseWorkout[]
   estimatedDuration Int?
-  completed         Boolean           @default(false)
-  createdAt         DateTime          @default(now())
+  completed         Boolean            @default(false)
+  createdAt         DateTime           @default(now())
   completedAt       DateTime?
-  imageId           String?           @unique @db.Char(36)
-  image             Image?            @relation(fields: [imageId], references: [id])
-  userId            String            @db.Char(36)
-  user              User              @relation(fields: [userId], references: [id])
+  imageId           String?            @unique @db.Char(36)
+  image             Image?             @relation(fields: [imageId], references: [id])
+  userId            String             @db.Char(36)
+  user              User               @relation(fields: [userId], references: [id])
+  completedWorkouts CompletedWorkout[]
 }
 
 model CompletedWorkout {
   workoutId   String   @db.Char(36)
+  workout     Workout  @relation(fields: [workoutId], references: [id])
   userId      String   @db.Char(36)
   user        User     @relation(fields: [userId], references: [id])
   completedAt DateTime @db.Date
