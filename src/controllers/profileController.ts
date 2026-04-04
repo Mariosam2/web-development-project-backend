@@ -35,10 +35,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 

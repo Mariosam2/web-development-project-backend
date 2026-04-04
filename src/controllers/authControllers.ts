@@ -15,10 +15,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
@@ -71,10 +68,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
@@ -139,10 +133,7 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
     const authUser = await prisma.user.findUniqueOrThrow({ where: { googleId: result.data.googleId } });

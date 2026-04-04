@@ -9,10 +9,7 @@ export const contact = async (req: Request, res: Response, next: NextFunction) =
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 

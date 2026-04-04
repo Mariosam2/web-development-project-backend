@@ -19,10 +19,7 @@ export const workouts = async (req: Request, res: Response) => {
   if (!validatedParams.success) {
     return res.status(400).json({
       success: false,
-      validationErrors: validatedParams.error.issues.map((e) => ({
-        field: e.path.join("."),
-        message: e.message,
-      })),
+      message: validatedParams.error.issues[0].message,
     });
   }
 
@@ -126,10 +123,7 @@ export const addWorkout = async (req: Request, res: Response, next: NextFunction
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
@@ -171,11 +165,7 @@ export const updateWorkout = async (req: Request, res: Response, next: NextFunct
     if (!result.success || !workoutId) {
       return res.status(400).json({
         success: false,
-        validationErrors:
-          result.error?.issues.map((e) => ({
-            field: e.path.join("."),
-            message: e.message,
-          })) ?? "WorkoutId is required",
+        message: result.error?.issues[0].message ?? "WorkoutId is required",
       });
     }
     const { exercises, imageRemoved, ...workout } = result.data;
@@ -229,10 +219,7 @@ export const importExercises = async (req: Request, res: Response, next: NextFun
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
@@ -257,10 +244,7 @@ export const removeExercises = async (req: Request, res: Response, next: NextFun
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
@@ -329,10 +313,7 @@ export const generateWorkout = async (req: Request, res: Response, next: NextFun
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        validationErrors: result.error.issues.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: result.error.issues[0].message,
       });
     }
 
