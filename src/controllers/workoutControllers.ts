@@ -208,6 +208,7 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
       return res.status(400).json({ success: false, message: "WorkoutId is required" });
     }
     await deleteOldImage(workoutId as string, "workout");
+    await prisma.completedWorkout.deleteMany({ where: { workoutId: workoutId as string } });
     await prisma.image.deleteMany({ where: { workout: { id: workoutId as string } } });
     await prisma.exerciseWorkout.deleteMany({ where: { workoutId: workoutId as string } });
 
