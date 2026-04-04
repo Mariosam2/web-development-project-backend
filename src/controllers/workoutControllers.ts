@@ -30,8 +30,8 @@ export const workouts = async (req: Request, res: Response) => {
     where: {
       userId,
       ...(params.query && { title: { contains: params.query } }),
-      ...(params.startDate && { createdAt: { gte: params.startDate } }),
-      ...(params.endDate && { createdAt: { lte: params.endDate } }),
+      ...(params.startDate && { createdAt: { gte: new Date(params.startDate + "T23:59:59.999Z") } }),
+      ...(params.endDate && { createdAt: { lte: new Date(params.endDate + "T23:59:59.999Z") } }),
       ...(params.isCompleted !== undefined && { completed: params.isCompleted }),
     },
     omit: { userId: true },
