@@ -58,3 +58,18 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 };
+
+export const deleteProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: userId } = req.user as Express.User;
+
+    await prisma.workout.deleteMany({ where: { userId } });
+    await prisma.image.deleteMany({ where: { user: { id: userId } } });
+    await prisma.completedWorkout.deleteMany({ where: { userId } });
+    await prisma.user.delete({ where: { id: userId } });
+
+    res.clearCookie("refreshToken").status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};

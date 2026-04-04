@@ -16,7 +16,7 @@ export const RegisterSchema = z
       .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.password.trim() === data.confirmPassword.trim(), {
     message: "passwords mismatch",
     path: ["confirmPassword"],
   });
