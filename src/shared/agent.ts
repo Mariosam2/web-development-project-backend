@@ -1,16 +1,21 @@
 import * as z from "zod";
 import { GenerateWorkoutSchema } from "./schemas/GenerateWorkoutSchema";
-import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { IExerciseMatch } from "./interfaces/IExerciseMatch";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
 import { AIWorkoutSchema } from "./schemas/AIWorkoutSchema";
 import { getEnvOrThrow } from "./helpers";
+import { Pool } from "pg";
+
+// Replace Supabase client with Neon pool
+const pool = new Pool({
+  connectionString: getEnvOrThrow("DATABASE_URL"),
+  ssl: { rejectUnauthorized: false },
+});
 
 const openai = new OpenAI({ apiKey: getEnvOrThrow("OPENAI_API_KEY") });
 const anthropic = createAnthropic({ apiKey: getEnvOrThrow("ANTHROPIC_API_KEY") });
-const supabase = createClient(getEnvOrThrow("SUPABASE_URL"), getEnvOrThrow("SUPABASE_SERVICE_KEY"));
 const MUSCLE_MAPPING = `ADDUCTOR LONGUS: Adductor Longus,
     ADDUCTOR BREVIS: Adductor Brevis,
     ADDUCTOR MAGNUS: Adductor Magnus,
@@ -75,15 +80,13 @@ export const generateEmbedding = async (workoutInput: z.infer<typeof GenerateWor
 
 export const getRelevantExercises = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
   const embedding = await generateEmbedding(workoutInput);
-  //console.log("EQUIPMENTS", workoutInput.equipments);
-  const { data, error } = await supabase.rpc("match_exercises", {
-    query_embedding: embedding,
-    match_count: 15,
-  });
 
-  if (error) throw error;
+  const result = await pool.query<IExerciseMatch>("SELECT * FROM match_exercises($1::vector, $2)", [
+    `[${embedding.join(",")}]`,
+    15,
+  ]);
 
-  return data as IExerciseMatch[];
+  return result.rows;
 };
 
 export const generateWorkoutFromAgent = async (workoutInput: z.infer<typeof GenerateWorkoutSchema>) => {
