@@ -10,7 +10,7 @@ import { Pool } from "pg";
 
 // Replace Supabase client with Neon pool
 const pool = new Pool({
-  connectionString: getEnvOrThrow("DATABASE_URL"),
+  connectionString: getEnvOrThrow("NEON_DATABASE_URL"),
   ssl: { rejectUnauthorized: false },
 });
 
